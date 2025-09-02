@@ -1,0 +1,98 @@
+# ===== 核心依赖 =====
+
+# FastAPI Web框架
+fastapi
+uvicorn[standard]
+python-multipart
+aiofiles
+
+# 数据验证
+pydantic
+pydantic-settings
+
+# ===== AI模型 =====
+# 保留用于文本生成（如AI报告）的库
+openai
+
+# ===== 词典与NLP处理 =====
+# 用于词典搜索的lemma处理
+spacy==3.8.7
+
+# English model (small)
+# PEP 508 format: package_name @ url_to_wheel
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
+# Swedish model (small)
+sv_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/sv_core_news_sm-3.8.0/sv_core_news_sm-3.8.0-py3-none-any.whl
+
+# ===== 网络请求 =====
+requests
+httpx
+aiohttp
+
+# ===== 工具和实用程序 =====
+
+# 环境变量管理
+python-dotenv
+
+# 日志
+python-json-logger
+
+# 时间处理
+python-dateutil
+pytz
+
+# ===== 开发依赖 =====
+
+# 测试
+pytest
+pytest-asyncio
+pytest-cov
+
+# 代码质量
+black
+flake8
+mypy
+isort
+
+# ===== 生产部署 =====
+
+# ASGI服务器
+gunicorn
+
+# JWT认证和密码处理
+PyJWT
+passlib[bcrypt]
+
+# 数据库
+sqlalchemy
+psycopg2-binary # 添加此行，用于连接PostgreSQL
+
+# ===== 可选依赖 =====
+
+# 缓存（如果使用Redis）
+# redis
+# hiredis
+
+# 监控和分析
+# prometheus-client
+# sentry-sdk[fastapi]
+
+# 任务队列（如果需要后台任务）
+# celery
+# redis
+
+# ===== 系统依赖说明 =====
+#
+# 对于Render等托管平台，通常不需要手动安装这些
+#
+# 需要安装的系统包（Ubuntu/Debian）：
+# sudo apt-get update
+# sudo apt-get install -y ffmpeg libsndfile1 python3-dev
+#
+# macOS (使用Homebrew)：
+# brew install ffmpeg libsndfile
+#
+# Windows：
+# 下载并安装ffmpeg: https://ffmpeg.org/download.html
+# 添加到系统PATH环境变量

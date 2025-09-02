@@ -15,8 +15,8 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional, Tuple, List
 from pathlib import Path
-from pydub import AudioSegment
-from pydub.effects import normalize
+# from pydub import AudioSegment
+# from pydub.effects import normalize
 import json
 import tempfile
 import os

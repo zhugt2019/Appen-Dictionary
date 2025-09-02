@@ -102,7 +102,7 @@ class Example(DictionaryBase):
     word_entry = relationship("Dictionary", back_populates="examples")
 
 # --- MODIFIED: Database Engines and Sessions for both databases ---
-user_engine = create_engine(USER_DATA_DB_URL, connect_args={"check_same_thread": False})
+user_engine = create_engine(USER_DATA_DB_URL)
 dictionary_engine = create_engine(DICTIONARY_DB_URL, connect_args={"check_same_thread": False})
 
 UserSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=user_engine)

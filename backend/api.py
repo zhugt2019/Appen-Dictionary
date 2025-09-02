@@ -33,9 +33,11 @@ from .prompt_managements import pm
 # )
 from .main import (
     generate_response_async, generate_example_dialogue, generate_review, 
-    start_background_tasks, audio_processor, model_manager, generate_word_report
+    start_background_tasks, 
+    # audio_processor, 
+    model_manager, generate_word_report
 )
-from .audio_processor import concatenate_audios_sync
+# from .audio_processor import concatenate_audios_sync
 
 # --- Application Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

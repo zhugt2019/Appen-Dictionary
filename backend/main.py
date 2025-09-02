@@ -32,7 +32,7 @@ from cachetools import TTLCache # 确保导入 TTLCache
 # Relative imports from within the project
 from .prompt_managements import pm
 from .models import ChatMessage, MessageRole, format_dialog_for_display
-from .audio_processor import AudioProcessor, concatenate_audios_sync
+# from .audio_processor import AudioProcessor, concatenate_audios_sync
 
 # --- ADDED START: Word Report Cache and Logic ---
 word_report_cache = TTLCache(maxsize=200, ttl=3600) # Cache reports for 24 hours

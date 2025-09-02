@@ -357,7 +357,7 @@ async def startup_event():
 async def shutdown_event():
     # ... (shutdown logic is unchanged)
     logger.info("--- Shutting down Svenska AI Practice Backend ---")
-    audio_processor.cleanup()
+    # audio_processor.cleanup()
     logger.info("Resources cleaned up.")
 
 

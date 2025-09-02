@@ -40,12 +40,14 @@ function setupEventListeners() {
     elements.customScenarioBtn.addEventListener('click', showCustomScenarioModal);
     elements.customScenarioGenerateBtn.addEventListener('click', generateCustomScenario);
     elements.customScenarioCancelBtn.addEventListener('click', () => closeModal('customScenarioModal'));
-    elements.recordButton.addEventListener('mousedown', startRecording);
-    elements.recordButton.addEventListener('mouseup', stopRecording);
-    elements.recordButton.addEventListener('mouseleave', stopRecording);
-    elements.recordButton.addEventListener('touchstart', startRecording, { passive: false });
-    elements.recordButton.addEventListener('touchend', stopRecording);
-    
+
+    // ↓↓↓ 删除或注释掉下面这五行代码 ↓↓↓
+    // elements.recordButton.addEventListener('mousedown', startRecording);
+    // elements.recordButton.addEventListener('mouseup', stopRecording);
+    // elements.recordButton.addEventListener('mouseleave', stopRecording);
+    // elements.recordButton.addEventListener('touchstart', startRecording, { passive: false });
+    // elements.recordButton.addEventListener('touchend', stopRecording);
+
     if (elements.exampleDialogBtn) {
         elements.exampleDialogBtn.addEventListener('click', showExampleDialog);
     }

@@ -439,4 +439,4 @@ def generate_review(
 async def start_background_tasks():
     """Initializes background tasks for the application."""
     logger.info("Starting background tasks...")
-    asyncio.create_task(model_manager.cleanup_cache())
+    # asyncio.create_task(model_manager.cleanup_cache())

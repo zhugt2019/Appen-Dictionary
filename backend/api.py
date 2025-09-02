@@ -343,11 +343,15 @@ async def startup_event():
     # ... rest of the startup code ...
     if not GEMINI_API_KEY and not DEEPSEEK_API_KEY:
         logger.error("Neither GEMINI_API_KEY nor DEEPSEEK_API_KEY is set. AI calls will fail.")
-    loop = asyncio.get_event_loop()
-    logger.info("Initiating model pre-warming...")
-    await loop.run_in_executor(None, model_manager.get_whisper_model)
-    await loop.run_in_executor(None, model_manager.get_tts_model)
-    logger.info("Models pre-warmed successfully.")
+
+    # ↓↓↓ 删除或注释掉以下四行代码 ↓↓↓
+    # loop = asyncio.get_event_loop()
+    # logger.info("Initiating model pre-warming...")
+    # await loop.run_in_executor(None, model_manager.get_whisper_model)
+    # await loop.run_in_executor(None, model_manager.get_tts_model)
+    # logger.info("Models pre-warmed successfully.")
+    # ↑↑↑ 删除或注释掉以上四行代码 ↑↑↑
+
     asyncio.create_task(start_background_tasks())
     asyncio.create_task(cleanup_old_audio_files())
     logger.info("Background cleanup tasks initiated.")

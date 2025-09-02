@@ -44,86 +44,15 @@ logger = logging.getLogger(__name__)
 
 class ModelManager:
     """
-    Singleton class to manage lazy loading and caching of machine learning models.
+    Singleton class to manage shared resources like thread pools.
     """
     _instance = None
-    _models = {}
-    _executor = ThreadPoolExecutor(max_workers=2)
+    _executor = ThreadPoolExecutor(max_workers=2) # 保留线程池给异步任务使用
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-
-    def __init__(self):
-        if hasattr(self, 'initialized'):
-            return
-
-        # self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        # self.torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-        self._audio_cache = {}
-        self.cache_dir = Path("cache")
-        self.cache_dir.mkdir(exist_ok=True)
-        self.initialized = True
-        logger.info(f"ModelManager initialized on device: {self.device}")
-
-    # def get_whisper_model(self):
-    #     """Lazily loads and returns the Whisper ASR model."""
-    #     if 'whisper' not in self._models:
-    #         logger.info("Loading Whisper model (KBLab/kb-whisper-small)...")
-    #         model_id = "KBLab/kb-whisper-small"
-    #         model = AutoModelForSpeechSeq2Seq.from_pretrained(
-    #             model_id, torch_dtype=self.torch_dtype, use_safetensors=True, cache_dir=str(self.cache_dir)
-    #         )
-    #         model.to(self.device)
-    #         processor = AutoProcessor.from_pretrained(model_id, cache_dir=str(self.cache_dir))
-    #         self._models['whisper'] = pipeline(
-    #             "automatic-speech-recognition", model=model, tokenizer=processor.tokenizer,
-    #             feature_extractor=processor.feature_extractor, max_new_tokens=128,
-    #             chunk_length_s=15, batch_size=16, return_timestamps=True,
-    #             torch_dtype=self.torch_dtype, device=self.device,
-    #         )
-    #         logger.info("Whisper model loaded successfully.")
-    #     return self._models['whisper']
-
-    # def get_tts_model(self):
-    #     """Lazily loads and returns the TTS model."""
-    #     if 'tts' not in self._models:
-    #         logger.info("Loading TTS model (facebook/mms-tts-swe)...")
-    #         model_id = "facebook/mms-tts-swe"
-    #         model = VitsModel.from_pretrained(model_id, cache_dir=str(self.cache_dir)).to(self.device)
-    #         tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=str(self.cache_dir))
-    #         self._models['tts'] = {'model': model, 'tokenizer': tokenizer}
-    #         logger.info("TTS model loaded successfully.")
-    #     return self._models['tts']
-
-    def get_cached_audio(self, text: str) -> Optional[bytes]:
-        """Retrieves generated audio from the in-memory cache."""
-        text_hash = hashlib.md5(text.encode()).hexdigest()
-        return self._audio_cache.get(text_hash)
-
-    def cache_audio(self, text: str, audio_data: bytes):
-        """Caches generated audio data in memory."""
-        text_hash = hashlib.md5(text.encode()).hexdigest()
-        if len(self._audio_cache) >= 200:
-            # Evict the oldest item if cache is full
-            oldest_key = next(iter(self._audio_cache))
-            del self._audio_cache[oldest_key]
-        self._audio_cache[text_hash] = audio_data
-
-    async def cleanup_cache(self):
-        """Periodically cleans the in-memory audio cache."""
-        while True:
-            await asyncio.sleep(1800) # Run every 30 minutes
-            try:
-                if len(self._audio_cache) > 100:
-                    # Trim the cache down to 100 items
-                    keys_to_remove = list(self._audio_cache.keys())[:-100]
-                    for key in keys_to_remove:
-                        del self._audio_cache[key]
-                    logger.info(f"Cleaned up audio cache. Current size: {len(self._audio_cache)} items.")
-            except Exception as e:
-                logger.error(f"Error during cache cleanup: {e}")
 
 model_manager = ModelManager()
 # audio_processor = AudioProcessor()

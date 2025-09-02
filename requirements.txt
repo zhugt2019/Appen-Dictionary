@@ -68,6 +68,8 @@ passlib[bcrypt]
 sqlalchemy
 psycopg2-binary # 添加此行，用于连接PostgreSQL
 
+cachetools
+
 # ===== 可选依赖 =====
 
 # 缓存（如果使用Redis）

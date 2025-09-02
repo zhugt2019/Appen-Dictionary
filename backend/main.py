@@ -126,7 +126,7 @@ class ModelManager:
                 logger.error(f"Error during cache cleanup: {e}")
 
 model_manager = ModelManager()
-audio_processor = AudioProcessor()
+# audio_processor = AudioProcessor()
 
 # --- Core Business Logic Functions ---
 

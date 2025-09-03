@@ -594,3 +594,9 @@ a:hover {
 }
 
 /* === END: New dropdown menu styles === */
+
+/* 隐藏 Practice 导航链接 */
+#nav-practice,
+#nav-practice-desktop {
+    display: none !important;
+}

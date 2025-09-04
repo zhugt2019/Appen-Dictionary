@@ -195,6 +195,7 @@ const reportLabels = {
     'zh': {
         definition: '定义',
         partOfSpeech: '词性',
+        ipa: '国际音标', // <--- 新增
         inflections: '变位/变格',
         exampleSentences: '例句',
         synonyms: '近义词',
@@ -203,6 +204,7 @@ const reportLabels = {
     'ko': {
         definition: '정의',
         partOfSpeech: '품사',
+        ipa: '국제 음성 기호', // 已新增并修正为更准确的翻译
         inflections: '변형',
         exampleSentences: '예문',
         synonyms: '유의어',
@@ -211,6 +213,7 @@ const reportLabels = {
     'ur': { // 乌尔都语，请确认翻译是否准确
         definition: 'تعریف',
         partOfSpeech: 'صرف',
+        ipa: 'بین الاقوامی صوتیاتی ابجد', // <--- 新增
         inflections: 'صرفیاتی تبدیلیاں',
         exampleSentences: 'مثالی جملے',
         synonyms: 'مترادفات',
@@ -219,6 +222,7 @@ const reportLabels = {
     'hi': { // 印地语，请确认翻译是否准确
         definition: 'परिभाषा',
         partOfSpeech: 'शब्द-भेद',
+        ipa: 'अंतर्राष्ट्रीय ध्वन्यात्मक वर्णमाला', // <--- 新增
         inflections: 'रूप परिवर्तन',
         exampleSentences: 'उदाहरण वाक्य',
         synonyms: 'पर्यायवाची',
@@ -227,10 +231,21 @@ const reportLabels = {
     'uk': { // 乌克兰语，请确认翻译是否准确
         definition: 'Визначення',
         partOfSpeech: 'Частина мови',
+        ipa: 'Міжнародний фонетичний алфавіт', // <--- 新增
         inflections: 'Відмінювання/Дієвідмінювання',
         exampleSentences: 'Приклади речень',
         synonyms: 'Синоніми',
         antonyms: 'Антоніми'
+    },
+        // --- 新增越南语翻译 ---
+    'vi': {
+        definition: 'Định nghĩa',
+        partOfSpeech: 'Từ loại',
+        ipa: 'Bảng mẫu tự ngữ âm quốc tế (IPA)',
+        inflections: 'Biến cách',
+        exampleSentences: 'Câu ví dụ',
+        synonyms: 'Từ đồng nghĩa',
+        antonyms: 'Từ trái nghĩa'
     },
     // Fallback or English if target language not found
     'default': {
@@ -243,7 +258,7 @@ const reportLabels = {
     }
 };
 
-// --- REVISED function with safety fallback ---
+// --- REVISED function with safety fallback AND IPA support ---
 async function handleWordReportRequest(event) {
     const reportBtn = event.target.closest('.btn-get-report');
     if (!reportBtn) return;
@@ -260,6 +275,7 @@ async function handleWordReportRequest(event) {
 
     if (!container) return;
 
+    // Logic to toggle visibility remains the same
     if (container.innerHTML !== '' && container.style.display !== 'none') {
         container.style.display = 'none';
         reportBtn.classList.remove('active');
@@ -276,20 +292,22 @@ async function handleWordReportRequest(event) {
     container.innerHTML = `<div class="p-2 flex-center gap-2"><span class="spinner"></span><span class="text-secondary">Generating AI report...</span></div>`;
 
     try {
-        // --- CORE FIX: Add a fallback to ensure targetLanguage is never undefined ---
-        const targetLang = state.targetLanguage || 'zh'; // If state.targetLanguage is faulty, default to 'zh'
+        const targetLang = state.targetLanguage || 'zh';
         
         console.log(`Sending report request for "${word}" with language: "${targetLang}"`);
 
-        const report = await api.getWordReport(word, wordClass, targetLang); // Use the safe variable
+        const report = await api.getWordReport(word, wordClass, targetLang);
         
-        // --- 获取对应语言的标签 ---
         const labels = reportLabels[targetLang] || reportLabels['default'];
         
         container.innerHTML = `
             <div class="word-report">
                 <p><strong>${labels.definition}:</strong> ${report.definition}</p>
                 <p><strong>${labels.partOfSpeech}:</strong> ${report.part_of_speech}</p>
+                
+                ${report.ipa ? `
+                    <p><strong>${labels.ipa}:</strong> <span class="ipa-text">${report.ipa}</span></p>
+                ` : ''}
                 <p><strong>${labels.inflections}:</strong> ${report.inflections}</p>
                 
                 <h4>${labels.exampleSentences}:</h4>
@@ -331,7 +349,22 @@ export function renderSearchResults(data, append = false, query = '') {
     }
     
     if (!append && !data.items.length && !data.examples_found.length) {
-        container.innerHTML = `<p class="text-secondary">No results found for "${query}".</p>`;
+        // 不再是简单的文字，而是显示一个带按钮的卡片
+        container.innerHTML = `
+            <div class="result-item text-center">
+                <p class="text-secondary">No results found in the dictionary for "${query}".</p>
+                <p class="text-secondary">Would you like to ask the AI for an explanation?</p>
+                <div class="mt-2">
+                    <button class="btn btn-primary btn-get-report" 
+                            data-word="${query}" 
+                            data-class="unknown" 
+                            data-id="new-word-${Date.now()}">
+                        Ask AI to Explain
+                    </button>
+                </div>
+                <div class="word-report-container" id="report-container-new-word-${Date.now()}"></div>
+            </div>
+        `;
         return;
     }
 
@@ -438,6 +471,32 @@ export function renderSearchResults(data, append = false, query = '') {
                 </div>
             `;
         });
+
+        // ==================== 新增代码开始 ====================
+        // 在所有例句列表的末尾，添加一个总的 AI 解释模块
+
+        // 为这个新模块创建一个唯一的 ID，以防报告容器ID冲突
+        const uniqueId = `example-context-word-${Date.now()}`;
+
+        examplesSectionHTML += `
+            <div class="result-item mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
+                <p class="text-secondary text-center">
+                    The word "<strong>${query}</strong>" was not found as a main entry.
+                </p>
+                <p class="text-secondary text-center">Would you like to ask the AI for a detailed explanation?</p>
+                <div class="report-controls mt-2 text-center">
+                     <button class="btn btn-primary btn-get-report" 
+                            data-word="${query}" 
+                            data-class="unknown" 
+                            data-id="${uniqueId}">
+                        Ask AI to Explain "${query}"
+                    </button>
+                </div>
+                <div class="word-report-container" id="report-container-${uniqueId}"></div>
+            </div>
+        `;
+        // ==================== 新增代码结束 ====================
+
         container.innerHTML += examplesSectionHTML;
     }
     

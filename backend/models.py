@@ -234,13 +234,14 @@ class PaginatedWordSearchResult(BaseModel):
 # 用于单词报告功能的请求模型
 class WordReportRequest(BaseModel):
     swedish_word: str = Field(..., description="The Swedish word to analyze.")
-    word_class: str = Field(..., description="The part of speech of the word (e.g., Noun, Verb).")
+    word_class: Optional[str] = Field(None, description="The part of speech of the word (e.g., Noun, Verb).")
     target_language: str = Field(..., description="The target language code (e.g., 'zh', 'ko').")
 
 # 用于单词报告功能的响应模型 (结构化数据)
 class WordReportResponse(BaseModel):
     definition: str
     part_of_speech: str
+    ipa: Optional[str] = None # 设为可选，以防 AI 未能提供
     inflections: str
     example_sentences: List[str]
     synonyms: Optional[List[str]] = None

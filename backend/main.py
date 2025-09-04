@@ -64,7 +64,9 @@ LANGUAGE_NAME_MAP = {
     "ko": "Korean (한국어)",
     "ur": "Urdu (اردو)",
     "hi": "Hindi (हिन्दी)",
-    "uk": "Ukrainian (Українська)"
+    "uk": "Ukrainian (Українська)",
+    "ru": "Russian (Русский)",
+    "vi": "Vietnamese (Tiếng Việt)"
 }
 
 async def generate_word_report(swedish_word: str, word_class: str, target_language: str) -> Dict[str, Any]:
@@ -80,11 +82,14 @@ async def generate_word_report(swedish_word: str, word_class: str, target_langua
     
     language_full_name = LANGUAGE_NAME_MAP.get(target_language, target_language.capitalize())
 
+    # 如果词性未提供或为空，就用一个描述性短语代替
+    effective_word_class = word_class if word_class else "unknown"
+
     prompt = pm.get_prompt(
         name="word_analysis_prompt",
         variables={
             "SwedishWord": swedish_word,
-            "WordClass": word_class,
+            "WordClass": effective_word_class,
             "TargetLanguage": language_full_name
         }
     )

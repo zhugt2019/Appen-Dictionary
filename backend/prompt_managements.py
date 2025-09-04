@@ -215,12 +215,14 @@ Provide your review in a clear, encouraging, and easy-to-understand format.
 """
 
 WORD_ANALYSIS_PROMPT = """You are an expert Swedish linguist and teacher assisting a language learner.
-Your task is to provide a comprehensive analysis of the Swedish word "{SwedishWord}", which is a "{WordClass}".
+Your task is to provide a comprehensive analysis of the Swedish word "{SwedishWord}".
+The provided part of speech is "{WordClass}". If this is "unknown", you must first determine the most likely part of speech and then proceed with the analysis.
 The entire analysis MUST be generated in {TargetLanguage}.
 
 Please provide your response ONLY as a single, valid JSON object with the following exact keys and data types:
 - "definition": (string) A clear and concise definition of the word.
 - "part_of_speech": (string) The part of speech.
+- "ipa": (string) The International Phonetic Alphabet (IPA) transcription for the word. If unavailable, provide an empty string.
 - "inflections": (string) Grammatical inflections. If it's a noun, provide singular indefinite, singular definite, plural indefinite, plural definite forms. If it's a verb, provide present, past (preterite), and supine forms.
 - "example_sentences": (list of strings) Provide two simple example sentences. Each list item should be a single string containing the Swedish sentence, a hyphen, and its translation in {TargetLanguage}.
 - "synonyms": (list of strings) A list of 2-3 common synonyms. If none, provide an empty list.
@@ -230,6 +232,7 @@ Example for the verb "äta" (to eat) if the target language were English:
 {
   "definition": "To put or take food into the mouth, chew it, and swallow it.",
   "part_of_speech": "Verb",
+  "ipa": "/ˈɛːta/",
   "inflections": "Present: äter, Past: åt, Supine: ätit",
   "example_sentences": ["Jag äter ett äpple. - I am eating an apple.", "Vi åt middag igår. - We ate dinner yesterday."],
   "synonyms": ["konsumera", "förtära", "spisa"],

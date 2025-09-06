@@ -138,6 +138,15 @@
 
 /* Touch device specific styles */
 @media (hover: none) and (pointer: coarse) {
+
+    /*
+    Disable the default tap highlight color on touch devices (especially iOS)
+    to prevent visual glitches where the highlight conflicts with button styles.
+    */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
     /* Increase touch targets */
     .btn {
         min-height: 44px;

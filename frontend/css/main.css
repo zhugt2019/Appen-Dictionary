@@ -227,14 +227,24 @@ a:hover {
     cursor: pointer;
     user-select: none;
     touch-action: manipulation;
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-base), border-color var(--transition-base), transform var(--transition-base), box-shadow var(--transition-base);
     position: relative;
     overflow: hidden;
+    /* --- FINAL iOS RENDERING FIX START --- */
+    /* These properties are a common and effective fix for WebKit (iOS Safari) rendering glitches. 
+       They force the element onto its own hardware-accelerated layer in a more stable way, 
+       which resolves repaint bugs during complex state changes and transitions. */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    /* --- FINAL iOS RENDERING FIX END --- */
 }
 
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transition: none; /* Add this line */
 }
 
 .btn-primary {
@@ -248,6 +258,25 @@ a:hover {
 
 .btn-primary:active:not(:disabled) {
     transform: scale(0.95);
+}
+
+/* This rule provides a specific, stable appearance for a disabled primary button, 
+   overriding browser defaults that can cause focus state conflicts. */
+.btn-primary:disabled {
+    background-color: var(--primary-light); /* Use a lighter shade of the primary color */
+    color: rgba(255, 255, 255, 0.75);     /* Make the white text slightly transparent */
+    opacity: 1; /* Override the generic opacity to have full control */
+}
+
+/*
+  This provides a specific style for a primary button in its 'loading' state.
+  This high-specificity rule overrides the iOS Safari rendering bug by giving it
+  an explicit, stable style to render, matching the working "Explain" button.
+*/
+.btn-primary.active:disabled {
+    background-color: var(--primary-dark);
+    color: white;
+    opacity: 0.7;
 }
 
 .btn-secondary {
@@ -359,6 +388,19 @@ a:hover {
     border-radius: var(--border-radius-sm);
 }
 
+/* --- ADD THIS NEW RULE START --- */
+#translator-loading-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+/* --- ADD THIS NEW RULE END --- */
+
 @keyframes skeleton-loading {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
@@ -394,6 +436,17 @@ a:hover {
     line-height: 1;
     white-space: nowrap;
 }
+
+/*
+  This rule explicitly defines a custom focus style for all buttons.
+  It removes the browser's default outline which causes rendering glitches,
+  and replaces it with a modern, non-conflicting box-shadow to maintain accessibility.
+*/
+.btn:focus {
+    outline: none; /* Completely disable the default browser outline */
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.25); /* Add a soft, blue glow as a focus indicator */
+}
+/* --- ADD THIS NEW RULE END --- */
 
 .badge-primary {
     background-color: var(--primary-color);

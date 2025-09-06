@@ -219,11 +219,14 @@ Your task is to provide a comprehensive analysis of the Swedish word "{SwedishWo
 The provided part of speech is "{WordClass}". If this is "unknown", you must first determine the most likely part of speech and then proceed with the analysis.
 The entire analysis MUST be generated in {TargetLanguage}.
 
+IMPORTANT: If the word's part_of_speech is "Adjective", you MUST add a key named "comparison" to your JSON response, containing the comparative and superlative forms.
+
 Please provide your response ONLY as a single, valid JSON object with the following exact keys and data types:
 - "definition": (string) A clear and concise definition of the word.
 - "part_of_speech": (string) The part of speech.
 - "ipa": (string) The International Phonetic Alphabet (IPA) transcription for the word. If unavailable, provide an empty string.
 - "inflections": (string) Grammatical inflections. If it's a noun, provide singular indefinite, singular definite, plural indefinite, plural definite forms. If it's a verb, provide present, past (preterite), and supine forms.
+- "comparison": (string, OPTIONAL) If the word is an adjective, provide its forms, e.g., "Comparative: vackrare, Superlative: vackrast".
 - "example_sentences": (list of strings) Provide two simple example sentences. Each list item should be a single string containing the Swedish sentence, a hyphen, and its translation in {TargetLanguage}.
 - "synonyms": (list of strings) A list of 2-3 common synonyms. If none, provide an empty list.
 - "antonyms": (list of strings) A list of 2-3 common antonyms. If none, provide an empty list.
@@ -240,6 +243,24 @@ Example for the verb "äta" (to eat) if the target language were English:
 }
 
 Do not include any text or explanations outside of the JSON object.
+"""
+
+TRANSLATION_PROMPT = """You are an expert translator and language coach. Your task is to translate the user's text into Swedish, providing three distinct and high-quality versions.
+The user has requested a specific style for the translation: **{Style}**.
+
+- If the style is "colloquial", all three versions should be natural, fluent, and suitable for everyday conversation.
+- If the style is "formal", all three versions should be precise, grammatically correct, and suitable for written or official communication.
+
+For each version, provide a very brief explanation in **{TargetLanguage}** of its nuance (e.g., "most common", "slightly more emphatic", "a bit more casual").
+
+Your response MUST ONLY contain the three versions formatted exactly as a numbered list. Do not add any introductory or concluding text like "Here are the translations:".
+
+Example format:
+1. [Swedish Translation 1] - (Nuance 1)
+2. [Swedish Translation 2] - (Nuance 2)
+3. [Swedish Translation 3] - (Nuance 3)
+
+Text to translate: "{Text}"
 """
 
 pm = PromptManager()
@@ -279,4 +300,9 @@ pm.add_prompt(
     name="review",
     template=ENGLISH_COACH_PROMPT,
     default_vars={"context": "You are a Swedish teacher.", "conversation": ""}
+)
+
+pm.add_prompt(
+    name="translation_prompt",
+    template=TRANSLATION_PROMPT
 )

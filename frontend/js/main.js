@@ -3,6 +3,7 @@ import { initUI, updateNavbar, showView } from './ui.js';
 import { initState } from './state.js';
 import { checkAuth, initAuth } from './auth.js';
 import { initConversation } from './conversation.js';
+import { initTranslator } from './translator.js';
 
 // Import these modules so their event listeners are set up.
 // These modules handle their own initialization internally.
@@ -32,6 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6. Initialize the core conversation functionality
     initConversation();
+
+    initTranslator(); // <--- ADD THIS
 
     // Explicitly set the default view to 'search' ---
     showView('search'); 

@@ -27,7 +27,7 @@
                 </button>
                 <div id="menu-dropdown" class="menu-dropdown hide-md">
                     <div class="language-selector-container">
-                        <span class="language-label">Language:</span>
+                        <span class="language-label">AI Explains in:</span>
                         <select id="languageSelector" class="form-select-sm language-selector" aria-label="Select translation language">
                             <option value="zh">中文</option>
                             <option value="ko">한국어</option>
@@ -41,6 +41,7 @@
                     <a href="#" id="nav-practice" class="nav-link">Practice</a>
                     <a href="#" id="nav-search" class="nav-link active">Search</a>
                     <a href="#" id="nav-wordbook" class="nav-link" style="display: none;">Wordbook</a>
+                    <a href="#" id="nav-translator" class="nav-link">Translator</a>
                     <a href="#" id="nav-login" class="nav-link">Login</a>
                     <a href="#" id="nav-logout" class="nav-link" style="display: none;">Logout</a>
                 </div>
@@ -49,10 +50,11 @@
                     <a href="#" id="nav-practice-desktop" class="nav-link">Practice</a>
                     <a href="#" id="nav-search-desktop" class="nav-link active">Search</a>
                     <a href="#" id="nav-wordbook-desktop" class="nav-link" style="display: none;">Wordbook</a>
+                    <a href="#" id="nav-translator-desktop" class="nav-link">Translator</a> 
                     <a href="#" id="nav-login-desktop" class="nav-link">Login</a>
                     <a href="#" id="nav-logout-desktop" class="nav-link" style="display: none;">Logout</a>
                     <div class="language-selector-container">
-                        <span class="language-label">Language:</span>
+                        <span class="language-label">AI Explains in:</span>
                         <select id="languageSelector-desktop" class="form-select-sm language-selector" aria-label="Select translation language">
                             <option value="zh">中文</option>
                             <option value="ko">한국어</option>
@@ -112,6 +114,30 @@
     <section id="wordbook-section" class="main-content" style="display: none;">
         <div class="container">
             <div class="card"><h2 class="card-header">My Wordbook</h2><div id="wordbookList" class="wordbook-list"></div></div>
+        </div>
+    </section>
+
+    <section id="translator-section" class="main-content" style="display: none;">
+        <div class="container">
+            <div class="card">
+                <h2 class="card-header">Translator</h2>
+                <div class="form-group">
+                    <label for="text-to-translate" class="form-label">Enter text in any language:</label>
+                    <textarea id="text-to-translate" class="form-textarea" rows="5" placeholder="Type or paste text here..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Translate to Swedish as:</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <label><input type="radio" name="translation-style" value="colloquial" checked> Informal (Spoken)</label>
+                        <label><input type="radio" name="translation-style" value="formal"> Formal (Written)</label>
+                    </div>
+                </div>
+                <button id="translate-btn" class="btn btn-primary">Translate</button>
+                <div class="mt-4">
+                    <h3 style="font-size: 1.2rem;">Result:</h3>
+                    <div id="translation-result" class="card" style="background: var(--background); min-height: 100px;"></div>
+                </div>
+            </div>
         </div>
     </section>
     

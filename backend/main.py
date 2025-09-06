@@ -33,6 +33,8 @@ from cachetools import TTLCache # 确保导入 TTLCache
 from .prompt_managements import pm
 from .models import ChatMessage, MessageRole, format_dialog_for_display
 # from .audio_processor import AudioProcessor, concatenate_audios_sync
+from .models import TranslateRequest, TranslateResponse, TranslationStyle
+
 
 # --- ADDED START: Word Report Cache and Logic ---
 word_report_cache = TTLCache(maxsize=200, ttl=3600) # Cache reports for 24 hours
@@ -445,3 +447,30 @@ async def start_background_tasks():
     """Initializes background tasks for the application."""
     logger.info("Starting background tasks...")
     # asyncio.create_task(model_manager.cleanup_cache())
+
+async def generate_translation(request: TranslateRequest) -> str:
+    """
+    Generates a Swedish translation for a given text based on style.
+    """
+    style_description = "colloquial (vardaglig)" if request.style == TranslationStyle.COLLOQUIAL else "formal (formell)"
+    
+    # Use the existing language map to get the full name for the prompt
+    language_full_name = LANGUAGE_NAME_MAP.get(request.target_language, "English")
+
+    prompt = pm.get_prompt(
+        name="translation_prompt",
+        variables={
+            "Style": style_description,
+            "Text": request.text,
+            "TargetLanguage": language_full_name
+        }
+    )
+    
+    # Using a lower temperature for more predictable translation
+    translated_text, _ = await generate_response_async(
+        scenario_prompt=prompt,
+        chat_history=[],
+        generation_config={"temperature": 0.2}
+    )
+    
+    return translated_text.strip()

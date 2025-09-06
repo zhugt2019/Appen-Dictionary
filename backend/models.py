@@ -243,6 +243,23 @@ class WordReportResponse(BaseModel):
     part_of_speech: str
     ipa: Optional[str] = None # 设为可选，以防 AI 未能提供
     inflections: str
+    comparison: Optional[str] = None # <--- ADD THIS LINE
     example_sentences: List[str]
     synonyms: Optional[List[str]] = None
     antonyms: Optional[List[str]] = None
+
+# --- ADD START: Translation Models ---
+
+class TranslationStyle(str, Enum):
+    COLLOQUIAL = "colloquial"
+    FORMAL = "formal"
+
+class TranslateRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="Text to be translated.")
+    style: TranslationStyle = Field(default=TranslationStyle.COLLOQUIAL, description="The desired translation style.")
+    target_language: str = Field(default='zh', description="The language for nuance explanations.")
+
+class TranslateResponse(BaseModel):
+    translation: str
+    
+# --- ADD END ---

@@ -159,6 +159,15 @@ export class API {
             })
         });
     }
+
+    // --- MODIFY THIS METHOD ---
+    async getTranslation(text, style, targetLanguage) {
+        return this._request('/api/translate', {
+            method: 'POST',
+            headers: this._getHeaders(),
+            body: JSON.stringify({ text, style, target_language: targetLanguage }) // <-- Add target_language
+        });
+    }
 }
 
 // Create and export a single, shared instance of the API class.

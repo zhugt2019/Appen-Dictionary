@@ -35,7 +35,8 @@ from .main import (
     generate_response_async, generate_example_dialogue, generate_review, 
     start_background_tasks, 
     # audio_processor, 
-    model_manager, generate_word_report
+    model_manager, generate_word_report, 
+    generate_translation
 )
 # from .audio_processor import concatenate_audios_sync
 
@@ -314,6 +315,22 @@ async def get_example_dialogue(request: models.ScenarioRequest, http_request: Re
 async def review_performance(request: models.ReviewRequest, http_request: Request):
     return await original_review_performance(request, http_request)
 
+# --- ADD START: Translator Endpoint ---
+@chat_router.post("/translate", response_model=models.TranslateResponse, tags=["Conversation Practice"])
+async def translate_text(
+    request: models.TranslateRequest,
+    current_user: User = Depends(auth.get_current_active_user)
+):
+    """
+    Translates a given text into Swedish with a specified style.
+    """
+    try:
+        translation = await generate_translation(request)
+        return models.TranslateResponse(translation=translation)
+    except Exception as e:
+        logger.error(f"Translation failed for text '{request.text[:30]}...': {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate translation.")
+# --- ADD END ---
 
 # --- Include all routers in the main FastAPI app ---
 app.include_router(auth_router)

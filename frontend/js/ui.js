@@ -27,6 +27,7 @@ function cacheElements() {
     elements.practiceSection = document.getElementById('practice-section'); 
     elements.searchSection = document.getElementById('search-section');
     elements.wordbookSection = document.getElementById('wordbook-section');
+    elements.translatorSection = document.getElementById('translator-section'); // <-- ADD THIS
     elements.loginModal = document.getElementById('login-modal');
     elements.navLogin = document.getElementById('nav-login');
     elements.navLogout = document.getElementById('nav-logout');
@@ -46,6 +47,13 @@ function cacheElements() {
 export function initUI() {
     cacheElements();
 
+    // --- ADD THIS BLOCK START ---
+    // Clear search input on page load to prevent browser session restore
+    if (elements.searchSection && elements.searchSection.querySelector('#searchInput')) {
+        elements.searchSection.querySelector('#searchInput').value = '';
+    }
+    // --- ADD THIS BLOCK END --
+
     // 导航事件监听器
     // 桌面端和移动端导航共享同一个事件处理函数
     const handleNavClick = (e) => {
@@ -62,6 +70,10 @@ export function initUI() {
             } else {
                 showToast("Please log in to see your wordbook.");
             }
+        // --- ADD THIS BLOCK START ---
+        } else if (navId.includes('translator')) {
+            showView('translator');
+        // --- ADD THIS BLOCK END ---
         } else if (navId.includes('login')) {
             setAuthMode(true); // <--- 使用新的函数来设置模式
             updateAuthModalUI();
@@ -174,6 +186,7 @@ export function showView(viewName) {
     if (elements.practiceSection) elements.practiceSection.style.display = 'none';
     if (elements.searchSection) elements.searchSection.style.display = 'none';
     if (elements.wordbookSection) elements.wordbookSection.style.display = 'none';
+    if (elements.translatorSection) elements.translatorSection.style.display = 'none'; // <-- ADD THIS
 
     // 统一为所有导航链接移除 active 类
     elements.allNavLinks.forEach(link => link.classList.remove('active'));
@@ -187,6 +200,8 @@ export function showView(viewName) {
         elements.searchSection.style.display = 'block';
     } else if (viewName === 'wordbook' && elements.wordbookSection) {
         elements.wordbookSection.style.display = 'block';
+    } else if (viewName === 'translator' && elements.translatorSection) {
+        elements.translatorSection.style.display = 'block';
     }
 }
 
@@ -197,6 +212,7 @@ const reportLabels = {
         partOfSpeech: '词性',
         ipa: '国际音标', // <--- 新增
         inflections: '变位/变格',
+        comparison: '比较级', // <--- ADD THIS
         exampleSentences: '例句',
         synonyms: '近义词',
         antonyms: '反义词'
@@ -206,6 +222,7 @@ const reportLabels = {
         partOfSpeech: '품사',
         ipa: '국제 음성 기호', // 已新增并修正为更准确的翻译
         inflections: '변형',
+        comparison: '비교급', // <--- ADDED
         exampleSentences: '예문',
         synonyms: '유의어',
         antonyms: '반의어'
@@ -215,6 +232,7 @@ const reportLabels = {
         partOfSpeech: 'صرف',
         ipa: 'بین الاقوامی صوتیاتی ابجد', // <--- 新增
         inflections: 'صرفیاتی تبدیلیاں',
+        comparison: 'موازنہ', // <--- ADDED
         exampleSentences: 'مثالی جملے',
         synonyms: 'مترادفات',
         antonyms: 'متضاد الفاظ'
@@ -224,6 +242,7 @@ const reportLabels = {
         partOfSpeech: 'शब्द-भेद',
         ipa: 'अंतर्राष्ट्रीय ध्वन्यात्मक वर्णमाला', // <--- 新增
         inflections: 'रूप परिवर्तन',
+        comparison: 'तुलना', // <--- ADDED
         exampleSentences: 'उदाहरण वाक्य',
         synonyms: 'पर्यायवाची',
         antonyms: 'विलोम शब्द'
@@ -233,6 +252,7 @@ const reportLabels = {
         partOfSpeech: 'Частина мови',
         ipa: 'Міжнародний фонетичний алфавіт', // <--- 新增
         inflections: 'Відмінювання/Дієвідмінювання',
+        comparison: 'Ступені порівняння', // <--- ADDED
         exampleSentences: 'Приклади речень',
         synonyms: 'Синоніми',
         antonyms: 'Антоніми'
@@ -243,6 +263,7 @@ const reportLabels = {
         partOfSpeech: 'Từ loại',
         ipa: 'Bảng mẫu tự ngữ âm quốc tế (IPA)',
         inflections: 'Biến cách',
+        comparison: 'Cấp so sánh', // <--- ADDED
         exampleSentences: 'Câu ví dụ',
         synonyms: 'Từ đồng nghĩa',
         antonyms: 'Từ trái nghĩa'
@@ -252,6 +273,7 @@ const reportLabels = {
         definition: 'Definition',
         partOfSpeech: 'Part of Speech',
         inflections: 'Inflections',
+        comparison: 'Comparison', // <--- ADDED
         exampleSentences: 'Example Sentences',
         synonyms: 'Synonyms',
         antonyms: 'Antonyms'
@@ -300,6 +322,7 @@ async function handleWordReportRequest(event) {
         
         const labels = reportLabels[targetLang] || reportLabels['default'];
         
+        // --- MODIFY START: HTML Rendering ---
         container.innerHTML = `
             <div class="word-report">
                 <p><strong>${labels.definition}:</strong> ${report.definition}</p>
@@ -308,7 +331,12 @@ async function handleWordReportRequest(event) {
                 ${report.ipa ? `
                     <p><strong>${labels.ipa}:</strong> <span class="ipa-text">${report.ipa}</span></p>
                 ` : ''}
+                
                 <p><strong>${labels.inflections}:</strong> ${report.inflections}</p>
+
+                ${report.comparison ? `
+                    <p><strong>${labels.comparison || 'Comparison'}:</strong> ${report.comparison}</p>
+                ` : ''}
                 
                 <h4>${labels.exampleSentences}:</h4>
                 <ul>
@@ -326,6 +354,7 @@ async function handleWordReportRequest(event) {
                 ` : ''}
             </div>
         `;
+        // --- MODIFY END ---
     } catch (error) {
         container.innerHTML = `<div class="p-2 text-error">Failed to generate report. Details: ${error.message}</div>`;
         console.error("Word report error:", error);
@@ -348,8 +377,9 @@ export function renderSearchResults(data, append = false, query = '') {
         return;
     }
     
+    // Case 1: Absolutely no results found.
     if (!append && !data.items.length && !data.examples_found.length) {
-        // 不再是简单的文字，而是显示一个带按钮的卡片
+        const uniqueId = `new-word-${Date.now()}`; // Create unique ID here
         container.innerHTML = `
             <div class="result-item text-center">
                 <p class="text-secondary">No results found in the dictionary for "${query}".</p>
@@ -358,20 +388,22 @@ export function renderSearchResults(data, append = false, query = '') {
                     <button class="btn btn-primary btn-get-report" 
                             data-word="${query}" 
                             data-class="unknown" 
-                            data-id="new-word-${Date.now()}">
+                            data-id="${uniqueId}">
                         Ask AI to Explain
                     </button>
                 </div>
-                <div class="word-report-container" id="report-container-new-word-${Date.now()}"></div>
+                <div class="word-report-container" id="report-container-${uniqueId}"></div>
             </div>
         `;
         return;
     }
 
+    // Case 2: Render main dictionary entries if they exist.
     if (data.items && data.items.length > 0) {
         if (!append) {
              container.innerHTML += `<h3>Dictionary Entries</h3>`;
         }
+        // ... (The entire rendering logic for `data.items.forEach` remains exactly the same as before) ...
         data.items.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'result-item';
@@ -381,7 +413,6 @@ export function renderSearchResults(data, append = false, query = '') {
                 addButton = `<button class="btn btn-sm btn-outline btn-add-wordbook" data-word="${item.swedish_word}" data-definition="${item.english_def}">Add</button>`;
             }
             
-            // --- NEW: Logic to build detailed HTML sections ---
             let definitionHTML = '';
             if (item.swedish_definition || item.swedish_explanation) {
                 definitionHTML += `<div class="result-details"><h4>Definition & Explanation</h4>`;
@@ -398,7 +429,7 @@ export function renderSearchResults(data, append = false, query = '') {
             let examplesHTML = '';
             if (item.examples && item.examples.length > 0) {
                 examplesHTML = '<div class="result-details"><h4>Examples</h4>';
-                item.examples.slice(0, 3).forEach(ex => { // Show up to 3 examples
+                item.examples.slice(0, 3).forEach(ex => {
                     examplesHTML += `<div class="example"><p class="example-sv">”${highlight(ex.swedish_sentence, query)}”</p><p class="example-en">”${highlight(ex.english_sentence, query)}”</p></div>`;
                 });
                 examplesHTML += '</div>';
@@ -425,9 +456,6 @@ export function renderSearchResults(data, append = false, query = '') {
                 advancedHTML += `</details>`;
             }
 
-            const buttonText = (reportLabels[state.targetLanguage] || reportLabels['default']).buttonText || 'Explain in my language';
-
-            // --- REVISED: Complete innerHTML with all sections ---
             itemDiv.innerHTML = `
                     <div class="result-item-header flex-between">
                         <div class="word-details">
@@ -457,8 +485,10 @@ export function renderSearchResults(data, append = false, query = '') {
         });
     }
 
-    // Render "Found in Examples" (unchanged)
+    // Case 3: Render "Found in Examples" section if examples exist.
+    // This now runs independently of the "not found" message.
     if (!append && data.examples_found && data.examples_found.length > 0) {
+        let examplesSection = document.createElement('div');
         let examplesSectionHTML = `<h3>Found in Examples</h3>`;
         data.examples_found.forEach(ex => {
             examplesSectionHTML += `
@@ -471,14 +501,16 @@ export function renderSearchResults(data, append = false, query = '') {
                 </div>
             `;
         });
+        examplesSection.innerHTML = examplesSectionHTML;
+        container.appendChild(examplesSection);
+    }
 
-        // ==================== 新增代码开始 ====================
-        // 在所有例句列表的末尾，添加一个总的 AI 解释模块
-
-        // 为这个新模块创建一个唯一的 ID，以防报告容器ID冲突
+    // Case 4: Render the "Not found as main entry" message ONLY if needed.
+    // This is the crucial new logic block.
+    if (!append && data.items.length === 0 && data.examples_found.length > 0) {
         const uniqueId = `example-context-word-${Date.now()}`;
-
-        examplesSectionHTML += `
+        const notFoundDiv = document.createElement('div');
+        notFoundDiv.innerHTML = `
             <div class="result-item mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
                 <p class="text-secondary text-center">
                     The word "<strong>${query}</strong>" was not found as a main entry.
@@ -495,9 +527,7 @@ export function renderSearchResults(data, append = false, query = '') {
                 <div class="word-report-container" id="report-container-${uniqueId}"></div>
             </div>
         `;
-        // ==================== 新增代码结束 ====================
-
-        container.innerHTML += examplesSectionHTML;
+        container.appendChild(notFoundDiv);
     }
     
     // Style injection (unchanged)

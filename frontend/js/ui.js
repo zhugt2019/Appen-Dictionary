@@ -268,6 +268,16 @@ const reportLabels = {
         synonyms: 'Từ đồng nghĩa',
         antonyms: 'Từ trái nghĩa'
     },
+    'fa': {
+    definition: 'تعریف',
+    partOfSpeech: 'نوع کلمه',
+    ipa: 'الفبای آوانگاری بین‌المللی (IPA)',
+    inflections: 'صرف فعل/اسم',
+    comparison: 'حالت تفضیلی',
+    exampleSentences: 'جملات نمونه',
+    synonyms: 'مترادف‌ها',
+    antonyms: 'متضادها'
+    },
     // Fallback or English if target language not found
     'default': {
         definition: 'Definition',

@@ -69,7 +69,8 @@ LANGUAGE_NAME_MAP = {
     "hi": "Hindi (हिन्दी)",
     "uk": "Ukrainian (Українська)",
     "ru": "Russian (Русский)",
-    "vi": "Vietnamese (Tiếng Việt)"
+    "vi": "Vietnamese (Tiếng Việt)",
+    "fa": "Persian (فارسی)",
 }
 
 async def generate_word_report(swedish_word: str, word_class: str, target_language: str) -> Dict[str, Any]:

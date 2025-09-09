@@ -26,7 +26,8 @@ import requests
 # import torch
 # import numpy as np
 # from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, VitsModel, AutoTokenizer
-from openai import OpenAI
+# from openai import OpenAI
+from mistralai import MistralClient as Mistral
 from cachetools import TTLCache # 确保导入 TTLCache
 
 # Relative imports from within the project
@@ -170,55 +171,110 @@ async def generate_word_report(swedish_word: str, word_class: str, target_langua
 #     loop = asyncio.get_event_loop()
 #     return await loop.run_in_executor(model_manager._executor, transcribe_audio, audio_data, input_format)
 
-def _call_deepseek_primary(
+def _call_mistral_primary(
     scenario_prompt: str,
     chat_history: List[ChatMessage],
     generation_config: Optional[Dict[str, Any]] = None
 ) -> Tuple[str, Dict[str, float]]:
     """
-    Calls the DeepSeek API (primary LLM).
+    Calls the Mistral AI API (primary LLM).
     """
-    logger.info("Attempting to generate response with primary API (DeepSeek)...")
+    logger.info("Attempting to generate response with primary API (Mistral)...")
     timing_log = {}
     total_start_time = time.time()
-    
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
-    model_name = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-chat")
+
+    # 1. Use Mistral's environment variables
+    api_key = os.getenv("MISTRAL_API_KEY")
+    model_name = os.getenv("MISTRAL_MODEL_NAME", "open-mistral-7b") # Your requested model
 
     if not api_key:
-        raise ValueError("DEEPSEEK_API_KEY environment variable not set.")
+        raise ValueError("MISTRAL_API_KEY environment variable not set.")
 
-    client = OpenAI(api_key=api_key, base_url=base_url)
+    # 2. Initialize the Mistral client
+    client = Mistral(api_key=api_key)
 
-    # Convert chat history to the OpenAI/DeepSeek format
+    # Message formatting is the same, so no changes needed here
     messages = [{"role": "system", "content": scenario_prompt}]
     for msg in chat_history:
         if isinstance(msg, ChatMessage) and msg.content and msg.content.strip():
-            # Map internal 'ai' role to 'assistant'
             role = "assistant" if msg.role == MessageRole.AI else "user"
             messages.append({"role": role, "content": msg.content})
 
     try:
         api_call_start_time = time.time()
-        response = client.chat.completions.create(
+
+        # 3. Use the Mistral client's chat.completions method
+        # Note: The official client is `chat`, but `chat.completions` is also supported for OpenAI compatibility.
+        # We will use the documented `chat` method for clarity.
+        response = client.chat(
             model=model_name,
             messages=messages,
-            stream=False,
             temperature=generation_config.get("temperature", 0.8) if generation_config else 0.8,
+            # Note: Mistral uses 'max_tokens' just like OpenAI
             max_tokens=generation_config.get("maxOutputTokens", 2048) if generation_config else 2048,
         )
         timing_log["api_call_time"] = time.time() - api_call_start_time
-        
+
+        # 4. The response structure is the same
         model_response = response.choices[0].message.content
         timing_log["total_response_time"] = time.time() - total_start_time
-        
-        logger.info(f"Generated AI response successfully with DeepSeek in {timing_log['total_response_time']:.2f}s.")
+
+        logger.info(f"Generated AI response successfully with Mistral in {timing_log['total_response_time']:.2f}s.")
         return model_response, timing_log
 
     except Exception as e:
-        logger.error(f"DeepSeek API request failed: {e}", exc_info=True)
+        logger.error(f"Mistral API request failed: {e}", exc_info=True)
         raise # Re-raise the exception to be handled by the scheduler
+
+# def _call_deepseek_primary(
+#     scenario_prompt: str,
+#     chat_history: List[ChatMessage],
+#     generation_config: Optional[Dict[str, Any]] = None
+# ) -> Tuple[str, Dict[str, float]]:
+#     """
+#     Calls the DeepSeek API (primary LLM).
+#     """
+#     logger.info("Attempting to generate response with primary API (DeepSeek)...")
+#     timing_log = {}
+#     total_start_time = time.time()
+    
+#     api_key = os.getenv("DEEPSEEK_API_KEY")
+#     base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+#     model_name = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-chat")
+
+#     if not api_key:
+#         raise ValueError("DEEPSEEK_API_KEY environment variable not set.")
+
+#     client = OpenAI(api_key=api_key, base_url=base_url)
+
+#     # Convert chat history to the OpenAI/DeepSeek format
+#     messages = [{"role": "system", "content": scenario_prompt}]
+#     for msg in chat_history:
+#         if isinstance(msg, ChatMessage) and msg.content and msg.content.strip():
+#             # Map internal 'ai' role to 'assistant'
+#             role = "assistant" if msg.role == MessageRole.AI else "user"
+#             messages.append({"role": role, "content": msg.content})
+
+#     try:
+#         api_call_start_time = time.time()
+#         response = client.chat.completions.create(
+#             model=model_name,
+#             messages=messages,
+#             stream=False,
+#             temperature=generation_config.get("temperature", 0.8) if generation_config else 0.8,
+#             max_tokens=generation_config.get("maxOutputTokens", 2048) if generation_config else 2048,
+#         )
+#         timing_log["api_call_time"] = time.time() - api_call_start_time
+        
+#         model_response = response.choices[0].message.content
+#         timing_log["total_response_time"] = time.time() - total_start_time
+        
+#         logger.info(f"Generated AI response successfully with DeepSeek in {timing_log['total_response_time']:.2f}s.")
+#         return model_response, timing_log
+
+#     except Exception as e:
+#         logger.error(f"DeepSeek API request failed: {e}", exc_info=True)
+#         raise # Re-raise the exception to be handled by the scheduler
 
 def _call_gemini_fallback(
     scenario_prompt: str,
@@ -289,12 +345,14 @@ def generate_response(
     Intelligent dispatcher for generating AI responses.
     It first tries the primary API (DeepSeek) and falls back to the secondary API (Gemini) on failure.
     """
+
     try:
-        # Step 1: Attempt the primary API (DeepSeek)
-        return _call_deepseek_primary(scenario_prompt, chat_history, generation_config)
+        # Step 1: Attempt the primary API (Mistral)
+        return _call_mistral_primary(scenario_prompt, chat_history, generation_config)
+        # return _call_deepseek_primary(scenario_prompt, chat_history, generation_config)
     except Exception as e:
-        logger.warning(f"Primary API (DeepSeek) failed: {e}. Falling back to Gemini.")
-        
+        logger.warning(f"Primary API (Mistral) failed: {e}. Falling back to Gemini.")
+
         try:
             # Step 2: Attempt the fallback API (Gemini)
             return _call_gemini_fallback(scenario_prompt, chat_history, generation_config)

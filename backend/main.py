@@ -27,7 +27,7 @@ import requests
 # import numpy as np
 # from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, VitsModel, AutoTokenizer
 # from openai import OpenAI
-from mistralai import MistralClient as Mistral
+from mistralai import Mistral
 from cachetools import TTLCache # 确保导入 TTLCache
 
 # Relative imports from within the project

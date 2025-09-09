@@ -13,6 +13,7 @@ pydantic-settings
 # ===== AI模型 =====
 # 保留用于文本生成（如AI报告）的库
 openai
+mistralai
 
 # ===== 词典与NLP处理 =====
 # 用于词典搜索的lemma处理

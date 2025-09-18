@@ -1,17 +1,31 @@
-// frontend/js/api.js (Updated Version)
+// frontend/js/api.js (Updated Version with Auto-Refresh)
 
-import { state } from './state.js';
+import { state, setAuthState } from './state.js';
+import { showLoginModal } from './ui.js';
+
+// A flag to prevent multiple concurrent refresh attempts
+let isRefreshing = false;
+// A queue for requests that arrive while the token is being refreshed
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
 
 export class API {
     constructor() {
         this.baseURL = ""; 
     }
 
-    // Helper to get headers, including the auth token if available
     _getHeaders(isFormData = false) {
-        const headers = {
-            'Accept': 'application/json',
-        };
+        const headers = { 'Accept': 'application/json' };
         if (state.authToken) {
             headers['Authorization'] = `Bearer ${state.authToken}`;
         }
@@ -21,95 +35,127 @@ export class API {
         return headers;
     }
 
-    // Unified handler for processing API responses
     async _handleResponse(response) {
         if (response.ok) {
-            if (response.status === 204) return null; // Handle No Content response
+            if (response.status === 204) return null;
             const text = await response.text();
-            try {
-                return JSON.parse(text);
-            } catch (err) {
-                return text;
-            }
+            try { return JSON.parse(text); } catch (err) { return text; }
         }
-        // --- MODIFIED ERROR HANDLING START ---
         let errorMessage = `API Error: ${response.status}`;
         try {
             const errorData = await response.json();
-            if (errorData.detail) {
-                // FastAPI's validation errors are often an array of objects.
-                // We'll stringify them for a readable error message.
-                errorMessage = typeof errorData.detail === 'string' 
-                    ? errorData.detail 
-                    : JSON.stringify(errorData.detail);
-            }
-        } catch (error) {
-            // If the error response is not JSON, use the default message.
-        }
+            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+        } catch (error) { /* Ignore if error response is not JSON */ }
         throw new Error(errorMessage);
-        // --- MODIFIED ERROR HANDLING END ---
     }
-    
-    // Generic request function
+
+    // --- NEW: Token Refresh Logic ---
+    async _refreshToken() {
+        try {
+            const response = await this._request('/api/refresh', {
+                method: 'POST',
+                headers: this._getHeaders(),
+                body: JSON.stringify({ refresh_token: state.refreshToken })
+            });
+            // Update the state with the new access token
+            setAuthState(true, response.access_token, state.refreshToken, state.username);
+            return response.access_token;
+        } catch (error) {
+            console.error("Failed to refresh token", error);
+            // If refresh fails, the session is truly over. Log out.
+            setAuthState(false, null, null, null);
+            showLoginModal(); // Prompt user to log in again
+            return Promise.reject(error);
+        }
+    }
+
+    // --- MODIFIED: The core request function with retry logic ---
     async _request(endpoint, options) {
         try {
+            // Add the current auth token to the headers for the initial request
+            options.headers = this._getHeaders('body' in options && options.body instanceof FormData);
             const response = await fetch(`${this.baseURL}${endpoint}`, options);
-            return await this._handleResponse(response);
+            
+            // If the response is not 401, handle it normally
+            if (response.status !== 401) {
+                return await this._handleResponse(response);
+            }
+
+            // --- Handle 401 Unauthorized Error ---
+
+            // If we are already refreshing, add this request to the queue
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                .then(newAccessToken => {
+                    options.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                    return this._request(endpoint, options); // Retry with the new token
+                });
+            }
+
+            isRefreshing = true;
+
+            return this._refreshToken()
+                .then(newAccessToken => {
+                    processQueue(null, newAccessToken); // Process queued requests successfully
+                    options.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                    // Retry the original failed request with the new token
+                    return fetch(`${this.baseURL}${endpoint}`, options).then(this._handleResponse);
+                })
+                .catch(err => {
+                    processQueue(err, null); // Reject queued requests
+                    return Promise.reject(err);
+                })
+                .finally(() => {
+                    isRefreshing = false;
+                });
+
         } catch (error) {
             console.error(`API request to ${endpoint} failed:`, error);
             throw error;
         }
     }
-
-    // --- Authentication Methods ---
+    
+    // --- Authentication Methods (login response now contains refresh_token) ---
     async register(username, password) {
         return this._request('/api/register', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify({ username, password })
         });
     }
 
     async login(username, password) {
-        return this._request('/api/login', {
+        // This initial login should not use the retry logic
+        const response = await fetch(`${this.baseURL}/api/login`, {
             method: 'POST',
-            headers: this._getHeaders(),
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ username, password })
         });
+        return await this._handleResponse(response);
     }
-
-    // --- Dictionary & Wordbook Methods ---
-    async searchWord(query, page = 1) { // MODIFIED: Added page parameter
+    
+    // ... (All other API methods: searchWord, getWordbook, etc., remain exactly the same)
+    async searchWord(query, page = 1) {
         const params = new URLSearchParams({ q: query, page: page });
-        return this._request(`/api/search?${params.toString()}`, {
-            method: 'GET',
-            headers: this._getHeaders()
-        });
+        return this._request(`/api/search?${params.toString()}`, { method: 'GET' });
     }
 
     async getWordbook() {
-        return this._request('/api/wordbook', {
-            method: 'GET',
-            headers: this._getHeaders()
-        });
+        return this._request('/api/wordbook', { method: 'GET' });
     }
     
     async addToWordbook(word, definition) {
         return this._request('/api/wordbook', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify({ word, definition })
         });
     }
     
     async removeFromWordbook(wordId) {
-        return this._request(`/api/wordbook/${wordId}`, {
-            method: 'DELETE',
-            headers: this._getHeaders()
-        });
+        return this._request(`/api/wordbook/${wordId}`, { method: 'DELETE' });
     }
 
-    // --- Existing Conversation Methods ---
     async generateScenario(type, options = {}) {
         const body = { level: options.level };
         if (type === 'custom' && options.situation) {
@@ -117,7 +163,6 @@ export class API {
         }
         return this._request('/api/scenarios/random', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify(body)
         });
     }
@@ -127,7 +172,6 @@ export class API {
         formData.append('audio', audioBlob, 'recording');
         return this._request('/api/transcribe', {
             method: 'POST',
-            headers: this._getHeaders(true), // isFormData = true
             body: formData
         });
     }
@@ -135,7 +179,6 @@ export class API {
     async getAiResponse(payload) {
         return this._request('/api/get_ai_response', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify(payload)
         });
     }
@@ -143,7 +186,6 @@ export class API {
     async getExampleDialogue(level, scenario) {
         return this._request('/api/example_dialogue', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify({ level, situation: scenario })
         });
     }
@@ -151,7 +193,6 @@ export class API {
     async getWordReport(word, wordClass, targetLanguage) {
         return this._request('/api/word-report', {
             method: 'POST',
-            headers: this._getHeaders(),
             body: JSON.stringify({
                 swedish_word: word,
                 word_class: wordClass,
@@ -160,15 +201,12 @@ export class API {
         });
     }
 
-    // --- MODIFY THIS METHOD ---
     async getTranslation(text, style, targetLanguage) {
         return this._request('/api/translate', {
             method: 'POST',
-            headers: this._getHeaders(),
-            body: JSON.stringify({ text, style, target_language: targetLanguage }) // <-- Add target_language
+            body: JSON.stringify({ text, style, target_language: targetLanguage })
         });
     }
 }
 
-// Create and export a single, shared instance of the API class.
 export const api = new API();

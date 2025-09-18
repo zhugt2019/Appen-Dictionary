@@ -66,7 +66,8 @@ async function handleAuthSubmit(event) {
     try {
         if (isLoginMode) {
             const data = await api.login(username, password);
-            setAuthState(true, data.access_token, username);
+            // MODIFIED: Pass both tokens to setAuthState
+            setAuthState(true, data.access_token, data.refresh_token, username);
             showToast(`Welcome back, ${username}!`);
         } else {
             await api.register(username, password);
@@ -93,9 +94,11 @@ async function handleAuthSubmit(event) {
 
 export function checkAuth() {
     const token = localStorage.getItem('authToken');
+    const refreshToken = localStorage.getItem('refreshToken'); // <-- ADD THIS
     const username = localStorage.getItem('username');
-    if (token && username) {
-        setAuthState(true, token, username);
+    if (token && refreshToken && username) {
+        // MODIFIED: Pass both tokens
+        setAuthState(true, token, refreshToken, username);
     }
 }
 

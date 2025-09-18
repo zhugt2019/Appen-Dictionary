@@ -5,6 +5,7 @@ export const state = {
     // Auth state
     isLoggedIn: false,
     authToken: null,
+    refreshToken: null, // ADDED: To store the long-lived refresh token
     username: null,
 
     // Conversation-specific state
@@ -20,6 +21,7 @@ export const state = {
 
 // Initializes state from localStorage.
 export function initState() {
+    // This part is for non-auth state, which is fine
     const level = localStorage.getItem('appen_level');
     if (level) {
         state.currentLevel = level;
@@ -30,20 +32,32 @@ export function initState() {
         state.targetLanguage = savedLang;
     }
 
+    // MODIFIED: Although checkAuth in auth.js handles the main auth check,
+    // we can pre-populate the state here for consistency.
+    state.authToken = localStorage.getItem('authToken');
+    state.refreshToken = localStorage.getItem('refreshToken');
+    state.username = localStorage.getItem('username');
+    state.isLoggedIn = !!(state.authToken && state.refreshToken && state.username);
+
+
     console.log("Initial state loaded:", state);
 }
 
-// Function to update the auth state
-export function setAuthState(isLoggedIn, token, username) {
+// MODIFIED: Function to update the auth state with both tokens
+export function setAuthState(isLoggedIn, authToken, refreshToken, username) {
     state.isLoggedIn = isLoggedIn;
-    state.authToken = token;
+    state.authToken = authToken;
+    state.refreshToken = refreshToken; // MODIFIED: Handle the refresh token
     state.username = username;
 
-    if (token) {
-        localStorage.setItem('authToken', token);
+    if (isLoggedIn && authToken && refreshToken) {
+        localStorage.setItem('authToken', authToken);
+        localStorage.setItem('refreshToken', refreshToken); // MODIFIED: Store the refresh token
         localStorage.setItem('username', username);
     } else {
+        // Clear all auth-related items on logout
         localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken'); // MODIFIED: Remove the refresh token
         localStorage.removeItem('username');
     }
     console.log("Auth state updated:", state);

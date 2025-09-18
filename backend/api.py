@@ -13,7 +13,7 @@ import spacy
 
 from fastapi import (
     FastAPI, APIRouter, Depends, HTTPException, status, 
-    File, UploadFile, Form, Request, BackgroundTasks, Query
+    File, UploadFile, Form, Request, BackgroundTasks, Query, Body 
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -50,6 +50,13 @@ AUDIO_CACHE_DIR = Path("audio_cache")
 AUDIO_CACHE_DIR.mkdir(exist_ok=True)
 BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
 
+origins = [
+    "https://svappen.app", # 你的生产环境前端域名
+    "http://localhost:8080", # 你的本地开发环境地址 (根据实际情况修改)
+    "http://127.0.0.1:8080",
+]
+
+
 database.init_db()
 
 app = FastAPI(
@@ -60,7 +67,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins, # <-- MODIFIED: Use the specific list of origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -108,8 +115,18 @@ chat_router = APIRouter(prefix="/api", tags=["Conversation Practice"])
 
 
 # === Authentication Endpoints ===
+
+# ADDED: A dependency function to get the client IP and apply the rate limit
+async def rate_limit_dependency(request: Request):
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Please try again later.",
+        )
+
 # CORRECTED: Path is now relative to the router's prefix
-@auth_router.post("/register", response_model=models.User, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/register", response_model=models.User, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit_dependency)])
 def register_user(user: models.UserCreate, db: Session = Depends(database.get_user_db)):
     db_user = auth.get_user(db, username=user.username)
     if db_user:
@@ -121,15 +138,45 @@ def register_user(user: models.UserCreate, db: Session = Depends(database.get_us
     db.refresh(new_user)
     return new_user
 
-# CORRECTED: Path is now relative to the router's prefix
-@auth_router.post("/login", response_model=models.Token)
+# MODIFIED: Change the response model for the login endpoint
+@auth_router.post("/login", response_model=models.Token, dependencies=[Depends(rate_limit_dependency)])
 def login_for_access_token(form_data: models.UserCreate, db: Session = Depends(database.get_user_db)):
     user = auth.get_user(db, username=form_data.username)
     if not user or not user.verify_password(form_data.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password", headers={"WWW-Authenticate": "Bearer"})
+    
+    # Create short-lived access token
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+    access_token = auth.create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    
+    # Create long-lived refresh token
+    refresh_token_expires = timedelta(days=auth.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = auth.create_access_token(
+        data={"sub": user.username}, expires_delta=refresh_token_expires
+    )
+    
+    return {
+        "access_token": access_token, 
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+# ADDED: A new endpoint to refresh the access token
+@auth_router.post("/refresh", response_model=models.AccessToken)
+def refresh_access_token(
+    refresh_token: str = Body(..., embed=True), 
+    db: Session = Depends(database.get_user_db)
+):
+    user = auth.get_user_from_token(token=refresh_token, db=db)
+    
+    # Issue a new access token
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_access_token = auth.create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": new_access_token, "token_type": "bearer"}
 
 # --- Add this code after the imports, to load spaCy models on startup ---
 try:

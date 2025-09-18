@@ -52,8 +52,8 @@ BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
 
 origins = [
     "https://svappen.app", # 你的生产环境前端域名
-    "http://localhost:8080", # 你的本地开发环境地址 (根据实际情况修改)
-    "http://127.0.0.1:8080",
+    "http://localhost:8000", # 你的本地开发环境地址 (根据实际情况修改)
+    "http://127.0.0.1:8000",
 ]
 
 

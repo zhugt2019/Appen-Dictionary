@@ -4,11 +4,12 @@ import { initState } from './state.js';
 import { checkAuth, initAuth } from './auth.js';
 import { initConversation } from './conversation.js';
 import { initTranslator } from './translator.js';
+import { loadWordbook } from './wordbook.js'; 
+import { state } from './state.js'; // Import state to check login status
 
 // Import these modules so their event listeners are set up.
 // These modules handle their own initialization internally.
 import './search.js';
-import './wordbook.js';
 
 /**
  * Main Application Initialization
@@ -22,21 +23,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Check for an existing auth token in localStorage
     checkAuth();
 
-    // 3. Cache DOM elements and set up general UI event listeners
+    // 3. If the user is logged in from a previous session, sync their wordbook in the background.
+    if (state.isLoggedIn) {
+        // We call with 'false' to prevent it from switching the view.
+        loadWordbook(false);
+    }
+
+    // 4. Cache DOM elements and set up general UI event listeners
     initUI();
 
-    // 4. Set up authentication-specific event listeners (for login/logout buttons, etc.)
+    // 5. Set up authentication-specific event listeners (for login/logout buttons, etc.)
     initAuth();
 
-    // 5. Update UI components like the navbar based on the initial auth state
+    // 6. Update UI components like the navbar based on the initial auth state
     updateNavbar();
 
-    // 6. Initialize the core conversation functionality
+    // 7. Initialize the core conversation functionality
     initConversation();
+    
+    // 8. Initialize the translator
+    initTranslator();
 
-    initTranslator(); // <--- ADD THIS
-
-    // Explicitly set the default view to 'search' ---
+    // Explicitly set the default view to 'search'
     showView('search'); 
 
     console.log("App initialized successfully.");

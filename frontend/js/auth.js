@@ -70,8 +70,8 @@ async function handleAuthSubmit(event) {
             const data = await api.login(username, password);
             // MODIFIED: Pass both tokens to setAuthState
             setAuthState(true, data.access_token, data.refresh_token, username);
-            // Proactively load the wordbook to populate the state cache.
-            loadWordbook(); 
+            // Call with 'false' to only sync data without changing the view.
+            loadWordbook(false); 
             showToast(`Welcome back, ${username}!`);
         } else {
             await api.register(username, password);

@@ -5,26 +5,36 @@ import { renderWordbookList, showToast, showView } from './ui.js';
 
 const api = new API();
 
-// This function is now EXPORTED so ui.js can call it.
-export async function loadWordbook() {
-    showView('wordbook'); 
-    renderWordbookList(null);
+// --- MODIFICATION START ---
+// Add a parameter 'showViewAndRender = true'.
+// This makes the function flexible: it can be used for background sync or for user-facing navigation.
+export async function loadWordbook(showViewAndRender = true) {
+    if (showViewAndRender) {
+        showView('wordbook'); 
+        renderWordbookList(null); // Show a loading state only when navigating to the view.
+    }
+
     try {
         if (!state.isLoggedIn) {
-            renderWordbookList([]);
+            if (showViewAndRender) renderWordbookList([]);
             return;
         }
         const entries = await api.getWordbook();
-        // Clear the set and repopulate it with the latest data from the API.
+        
+        // This is the core data synchronization logic. It should always run.
         state.wordbookWords.clear();
         entries.forEach(entry => state.wordbookWords.add(entry.word));
-        renderWordbookList(entries);
+        
+        if (showViewAndRender) {
+            renderWordbookList(entries);
+        }
     } catch (error) {
         console.error("Failed to load wordbook:", error);
         showToast(error.message);
-        renderWordbookList([]);
+        if (showViewAndRender) renderWordbookList([]);
     }
 }
+// --- MODIFICATION END ---
 
 async function handleGlobalClickActions(event) {
     const target = event.target;

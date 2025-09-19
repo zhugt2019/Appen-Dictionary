@@ -15,6 +15,9 @@ export async function loadWordbook() {
             return;
         }
         const entries = await api.getWordbook();
+        // Clear the set and repopulate it with the latest data from the API.
+        state.wordbookWords.clear();
+        entries.forEach(entry => state.wordbookWords.add(entry.word));
         renderWordbookList(entries);
     } catch (error) {
         console.error("Failed to load wordbook:", error);
@@ -36,6 +39,7 @@ async function handleGlobalClickActions(event) {
         const definition = target.dataset.definition;
         try {
             await api.addToWordbook(word, definition);
+            state.wordbookWords.add(word); // Update the state cache.
             showToast(`'${word}' added to your wordbook.`);
             target.textContent = 'Added';
         } catch (error) {
@@ -47,9 +51,18 @@ async function handleGlobalClickActions(event) {
     if (target.matches('.btn-remove-wordbook')) {
         target.disabled = true;
         const wordId = target.dataset.id;
+        const itemElement = target.closest('.wordbook-item');
+
+        // FIX: Get the word text from the element BEFORE the API call.
+        const word = itemElement.querySelector('h4').textContent;
+
         try {
             await api.removeFromWordbook(wordId);
-            target.closest('.wordbook-item').remove();
+
+            // --- Correct Order: First update state, then update UI ---
+            state.wordbookWords.delete(word); // 1. Update the state cache.
+            itemElement.remove();             // 2. Remove the element from the DOM.
+
             showToast('Word removed.');
         } catch (error) {
             showToast(error.message);

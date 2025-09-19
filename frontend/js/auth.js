@@ -3,6 +3,8 @@
 import { state, setAuthState } from './state.js';
 import { updateNavbar, showToast, closeModal, showModal, elements, showView } from './ui.js';
 import { API } from './api.js';
+import { loadWordbook } from './wordbook.js';
+
 
 const api = new API();
 export let isLoginMode = true;
@@ -68,6 +70,8 @@ async function handleAuthSubmit(event) {
             const data = await api.login(username, password);
             // MODIFIED: Pass both tokens to setAuthState
             setAuthState(true, data.access_token, data.refresh_token, username);
+            // Proactively load the wordbook to populate the state cache.
+            loadWordbook(); 
             showToast(`Welcome back, ${username}!`);
         } else {
             await api.register(username, password);

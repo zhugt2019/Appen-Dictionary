@@ -47,12 +47,17 @@ function cacheElements() {
 export function initUI() {
     cacheElements();
 
+
     // --- ADD THIS BLOCK START ---
-    // Clear search input on page load to prevent browser session restore
+    // Clear form inputs on page load to prevent browser session restore issues on mobile.
     if (elements.searchSection && elements.searchSection.querySelector('#searchInput')) {
         elements.searchSection.querySelector('#searchInput').value = '';
     }
-    // --- ADD THIS BLOCK END --
+    // This line specifically fixes the translator bug.
+    if (elements.translatorSection && elements.translatorSection.querySelector('#text-to-translate')) {
+        elements.translatorSection.querySelector('#text-to-translate').value = '';
+    }
+    // --- ADD THIS BLOCK END ---
 
     // 导航事件监听器
     // 桌面端和移动端导航共享同一个事件处理函数
@@ -418,10 +423,21 @@ export function renderSearchResults(data, append = false, query = '') {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'result-item';
             
+            // --- REPLACE THIS BLOCK ---
             let addButton = '';
             if (state.isLoggedIn) {
-                addButton = `<button class="btn btn-sm btn-outline btn-add-wordbook" data-word="${item.swedish_word}" data-definition="${item.english_def}">Add</button>`;
+                // Check if the word is in our cached wordbook Set.
+                const isAdded = state.wordbookWords.has(item.swedish_word);
+                
+                if (isAdded) {
+                    // If it is, render a disabled "Added" button.
+                    addButton = `<button class="btn btn-sm btn-success" disabled>Added</button>`;
+                } else {
+                    // Otherwise, render the standard "Add" button.
+                    addButton = `<button class="btn btn-sm btn-outline btn-add-wordbook" data-word="${item.swedish_word}" data-definition="${item.english_def}">Add</button>`;
+                }
             }
+            // --- END OF REPLACED BLOCK ---
             
             let definitionHTML = '';
             if (item.swedish_definition || item.swedish_explanation) {

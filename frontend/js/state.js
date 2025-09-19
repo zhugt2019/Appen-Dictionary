@@ -15,6 +15,8 @@ export const state = {
     isRecording: false,
     isLoading: false,
 
+    wordbookWords: new Set(), // Use a Set for efficient lookups.
+
     // Target language for dynamic translations. Default to Chinese.
     targetLanguage: 'zh',
 };
@@ -59,6 +61,7 @@ export function setAuthState(isLoggedIn, authToken, refreshToken, username) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken'); // MODIFIED: Remove the refresh token
         localStorage.removeItem('username');
+        state.wordbookWords.clear(); // Clear the wordbook cache on logout.
     }
     console.log("Auth state updated:", state);
 }

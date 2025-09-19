@@ -6,8 +6,47 @@ import { showToast } from './ui.js';
 let translateBtn;
 let sourceTextArea;
 let resultContainer;
-// --- ADD THIS ---
 let loadingIndicator; 
+let historyContainer;
+
+const HISTORY_KEY = 'translationHistory';
+
+function renderTranslationHistory() {
+    if (!historyContainer) return;
+    historyContainer.innerHTML = '';
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    if (history.length === 0) {
+        historyContainer.innerHTML = `<p class="text-secondary text-center">No history yet.</p>`;
+        return;
+    }
+    history.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'history-item';
+        itemDiv.innerHTML = `
+            <div class="source-text">${item.source}</div>
+            <div class="translation-text">${item.translation.replace(/\n/g, '<br>')}</div>
+        `;
+        // Add click listener to re-populate the textarea and result
+        itemDiv.addEventListener('click', () => {
+            sourceTextArea.value = item.source;
+            resultContainer.innerHTML = item.translation.replace(/\n/g, '<br>');
+        });
+        historyContainer.appendChild(itemDiv);
+    });
+}
+
+// --- ADD THIS NEW FUNCTION ---
+function saveTranslationToHistory(source, translation) {
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    const newEntry = { source, translation, timestamp: new Date().getTime() };
+    // Add new entry to the beginning
+    history.unshift(newEntry);
+    // Keep only the latest 10 entries
+    if (history.length > 10) {
+        history = history.slice(0, 10);
+    }
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
 
 async function handleTranslation() {
     if (!state.isLoggedIn) {
@@ -34,6 +73,8 @@ async function handleTranslation() {
     try {
         const response = await api.getTranslation(text, style, state.targetLanguage);
         resultContainer.innerHTML = response.translation.replace(/\n/g, '<br>');
+        saveTranslationToHistory(text, response.translation);
+        renderTranslationHistory();
     } catch (error) {
         resultContainer.textContent = `Error: ${error.message}`;
         showToast(error.message);
@@ -52,10 +93,12 @@ export function initTranslator() {
     translateBtn = document.getElementById('translate-btn');
     sourceTextArea = document.getElementById('text-to-translate');
     resultContainer = document.getElementById('translation-result');
-    // --- ADD THIS ---
     loadingIndicator = document.getElementById('translator-loading-indicator');
+    historyContainer = document.getElementById('translation-history');
 
     if (translateBtn) {
         translateBtn.addEventListener('click', handleTranslation);
     }
+    // Render history on initial load
+    renderTranslationHistory();
 }

@@ -653,3 +653,29 @@ a:hover {
 #nav-practice-desktop {
     display: none !important;
 }
+
+/* --- ADD THIS FOR TRANSLATOR HISTORY --- */
+.translation-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.history-item {
+    background: var(--background);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-base);
+}
+.history-item:hover {
+    background-color: var(--border-color);
+}
+.history-item .source-text {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+.history-item .translation-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}

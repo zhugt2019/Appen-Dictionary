@@ -383,28 +383,30 @@ export function renderSearchResults(data, append = false, query = '') {
     const container = document.getElementById('searchResults');
     if (!container) return;
 
+    // 对于任何新的搜索（非无限滚动），都先清空之前的结果
     if (!append) {
         container.innerHTML = '';
     }
 
+    // 处理API错误的情况
     if (data === null) {
         container.innerHTML = `<p class="text-error">Error fetching results.</p>`;
         return;
     }
     
-    // Case 1: Absolutely no results found.
+    // --- 情况1: API完全没有返回任何结果 (最简单的“未找到”情况) ---
     if (!append && !data.items.length && !data.examples_found.length) {
-        const uniqueId = `new-word-${Date.now()}`; // Create unique ID here
+        const uniqueId = `new-word-${Date.now()}`;
         container.innerHTML = `
             <div class="result-item text-center">
-                <p class="text-secondary">No results found in the dictionary for "${query}".</p>
+                <p class="text-secondary">No results found in the dictionary for "<strong>${query}</strong>".</p>
                 <p class="text-secondary">Would you like to ask the AI for an explanation?</p>
                 <div class="mt-2">
                     <button class="btn btn-primary btn-get-report" 
                             data-word="${query}" 
                             data-class="unknown" 
                             data-id="${uniqueId}">
-                        Ask AI to Explain
+                        Ask AI to Explain "${query}"
                     </button>
                 </div>
                 <div class="word-report-container" id="report-container-${uniqueId}"></div>
@@ -413,31 +415,55 @@ export function renderSearchResults(data, append = false, query = '') {
         return;
     }
 
-    // Case 2: Render main dictionary entries if they exist.
+    // --- 情况2 (新逻辑): 检查返回的结果中是否存在“完全匹配”的项 ---
+    let exactMatchFound = false;
     if (data.items && data.items.length > 0) {
-        if (!append) {
-             container.innerHTML += `<h3>Dictionary Entries</h3>`;
-        }
-        // ... (The entire rendering logic for `data.items.forEach` remains exactly the same as before) ...
+        exactMatchFound = data.items.some(item => item.swedish_word.toLowerCase() === query.toLowerCase());
+    }
+
+    // --- 情况3 (新逻辑): 如果没有完全匹配的结果（但有部分匹配的结果），则在列表顶部显示“Ask AI”模块 ---
+    if (!append && !exactMatchFound) {
+        const uniqueId = `fallback-word-${Date.now()}`;
+        const askAiBlock = document.createElement('div');
+        askAiBlock.className = 'result-item';
+        // 添加一些样式以突出显示此模块
+        askAiBlock.style.borderBottom = '2px solid var(--primary-color)';
+        askAiBlock.style.paddingBottom = 'var(--spacing-md)';
+        askAiBlock.style.marginBottom = 'var(--spacing-md)';
+        askAiBlock.innerHTML = `
+            <div class="text-center">
+                <p class="text-secondary">No exact match found for "<strong>${query}</strong>".</p>
+                <p class="text-secondary">You can ask the AI for an explanation, or see related words below.</p>
+                <div class="mt-2">
+                    <button class="btn btn-primary btn-get-report" 
+                            data-word="${query}" 
+                            data-class="unknown" 
+                            data-id="${uniqueId}">
+                        Ask AI to Explain "${query}"
+                    </button>
+                </div>
+                <div class="word-report-container" id="report-container-${uniqueId}"></div>
+            </div>
+        `;
+        container.appendChild(askAiBlock);
+    }
+
+
+    // --- 情况4: 渲染主要的词典条目列表 (如果有) ---
+    if (data.items && data.items.length > 0) {
         data.items.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'result-item';
             
-            // --- REPLACE THIS BLOCK ---
             let addButton = '';
             if (state.isLoggedIn) {
-                // Check if the word is in our cached wordbook Set.
                 const isAdded = state.wordbookWords.has(item.swedish_word);
-                
                 if (isAdded) {
-                    // If it is, render a disabled "Added" button.
                     addButton = `<button class="btn btn-sm btn-success" disabled>Added</button>`;
                 } else {
-                    // Otherwise, render the standard "Add" button.
                     addButton = `<button class="btn btn-sm btn-outline btn-add-wordbook" data-word="${item.swedish_word}" data-definition="${item.english_def}">Add</button>`;
                 }
             }
-            // --- END OF REPLACED BLOCK ---
             
             let definitionHTML = '';
             if (item.swedish_definition || item.swedish_explanation) {
@@ -511,8 +537,7 @@ export function renderSearchResults(data, append = false, query = '') {
         });
     }
 
-    // Case 3: Render "Found in Examples" section if examples exist.
-    // This now runs independently of the "not found" message.
+    // --- 情况5: 渲染“在例句中找到”的部分 (如果有) ---
     if (!append && data.examples_found && data.examples_found.length > 0) {
         let examplesSection = document.createElement('div');
         let examplesSectionHTML = `<h3>Found in Examples</h3>`;
@@ -530,44 +555,15 @@ export function renderSearchResults(data, append = false, query = '') {
         examplesSection.innerHTML = examplesSectionHTML;
         container.appendChild(examplesSection);
     }
-
-    // Case 4: Render the "Not found as main entry" message ONLY if needed.
-    // This is the crucial new logic block.
-    if (!append && data.items.length === 0 && data.examples_found.length > 0) {
-        const uniqueId = `example-context-word-${Date.now()}`;
-        const notFoundDiv = document.createElement('div');
-        notFoundDiv.innerHTML = `
-            <div class="result-item mt-3 pt-3" style="border-top: 1px solid var(--border-color);">
-                <p class="text-secondary text-center">
-                    The word "<strong>${query}</strong>" was not found as a main entry.
-                </p>
-                <p class="text-secondary text-center">Would you like to ask the AI for a detailed explanation?</p>
-                <div class="report-controls mt-2 text-center">
-                     <button class="btn btn-primary btn-get-report" 
-                            data-word="${query}" 
-                            data-class="unknown" 
-                            data-id="${uniqueId}">
-                        Ask AI to Explain "${query}"
-                    </button>
-                </div>
-                <div class="word-report-container" id="report-container-${uniqueId}"></div>
-            </div>
-        `;
-        container.appendChild(notFoundDiv);
-    }
     
-    // Style injection (unchanged)
+    // 注入自定义样式 (保持不变)
     if (!document.getElementById('custom-details-style')) {
         const style = document.createElement('style');
         style.id = 'custom-details-style';
         style.innerHTML = `
             .result-item h2 { font-size: var(--font-size-2xl); margin-bottom: var(--spacing-xs); display: flex; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap; }
             .result-item .badge { font-size: var(--font-size-xs); background-color: var(--secondary-color); color: var(--text-primary); padding: 4px 8px; border-radius: var(--border-radius-pill); font-weight: 600; white-space: nowrap; }
-
-            /* --- ADDED THIS LINE TO HIDE THE ICON --- */
             .result-item .search-direction { display: none; } 
-
-            .result-item .search-direction { font-size: var(--font-size-sm); font-weight: normal; }
             .result-item .translation-def { font-size: var(--font-size-lg); color: var(--text-primary); font-weight: 600; margin: 0; }
             .result-details { margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border-color); }
             .result-details h4 { font-size: var(--font-size-base); color: var(--primary-color); margin-bottom: var(--spacing-sm); }
@@ -575,12 +571,11 @@ export function renderSearchResults(data, append = false, query = '') {
             .detail-en, .example-en, .idiom-en { color: var(--text-secondary); font-size: var(--font-size-sm); font-style: italic; }
             .advanced-details { margin-top: var(--spacing-md); }
             .advanced-details summary { cursor: pointer; font-weight: 500; color: var(--primary-color); }
-            /* --- FINAL FIX: Removed horizontal padding --- */
             .highlight { 
                 background-color: var(--secondary-color); 
                 color: var(--text-primary); 
                 border-radius: 3px; 
-                padding: 0; /* Changed from '0 2px' to '0' */
+                padding: 0;
             }
         `;
         document.head.appendChild(style);

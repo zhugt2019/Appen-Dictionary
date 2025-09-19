@@ -103,7 +103,7 @@ export function checkAuth() {
 }
 
 export function logout() {
-    setAuthState(false, null, null);
+    setAuthState(false, null, null, null);
     updateNavbar();
     showToast("You have been logged out.");
     showView('practice');

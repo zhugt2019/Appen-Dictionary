@@ -1,7 +1,6 @@
 // frontend/js/api.js (Updated Version with Auto-Refresh)
 
 import { state, setAuthState } from './state.js';
-import { showLoginModal } from './ui.js';
 
 // A flag to prevent multiple concurrent refresh attempts
 let isRefreshing = false;
@@ -62,9 +61,9 @@ export class API {
             return response.access_token;
         } catch (error) {
             console.error("Failed to refresh token", error);
-            // If refresh fails, the session is truly over. Log out.
+            // If refresh fails, the session is over. Just update the state.
+            // The UI layer will react to this state change.
             setAuthState(false, null, null, null);
-            showLoginModal(); // Prompt user to log in again
             return Promise.reject(error);
         }
     }

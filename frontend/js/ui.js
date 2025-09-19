@@ -27,7 +27,8 @@ function cacheElements() {
     elements.practiceSection = document.getElementById('practice-section'); 
     elements.searchSection = document.getElementById('search-section');
     elements.wordbookSection = document.getElementById('wordbook-section');
-    elements.translatorSection = document.getElementById('translator-section'); // <-- ADD THIS
+    elements.translatorSection = document.getElementById('translator-section');
+    elements.analyzerSection = document.getElementById('analyzer-section');
     elements.loginModal = document.getElementById('login-modal');
     elements.navLogin = document.getElementById('nav-login');
     elements.navLogout = document.getElementById('nav-logout');
@@ -75,12 +76,12 @@ export function initUI() {
             } else {
                 showToast("Please log in to see your wordbook.");
             }
-        // --- ADD THIS BLOCK START ---
         } else if (navId.includes('translator')) {
             showView('translator');
-        // --- ADD THIS BLOCK END ---
+        } else if (navId.includes('analyzer')) {
+            showView('analyzer');
         } else if (navId.includes('login')) {
-            setAuthMode(true); // <--- 使用新的函数来设置模式
+            setAuthMode(true); 
             updateAuthModalUI();
             showModal('login-modal');
         } else if (navId.includes('logout')) {
@@ -191,7 +192,8 @@ export function showView(viewName) {
     if (elements.practiceSection) elements.practiceSection.style.display = 'none';
     if (elements.searchSection) elements.searchSection.style.display = 'none';
     if (elements.wordbookSection) elements.wordbookSection.style.display = 'none';
-    if (elements.translatorSection) elements.translatorSection.style.display = 'none'; // <-- ADD THIS
+    if (elements.translatorSection) elements.translatorSection.style.display = 'none';
+    if (elements.analyzerSection) elements.analyzerSection.style.display = 'none';
 
     // 统一为所有导航链接移除 active 类
     elements.allNavLinks.forEach(link => link.classList.remove('active'));
@@ -207,6 +209,8 @@ export function showView(viewName) {
         elements.wordbookSection.style.display = 'block';
     } else if (viewName === 'translator' && elements.translatorSection) {
         elements.translatorSection.style.display = 'block';
+    } else if (viewName === 'analyzer' && elements.analyzerSection) {
+        elements.analyzerSection.style.display = 'block';
     }
 }
 
@@ -611,3 +615,48 @@ export function renderWordbookList(entries) {
     });
 }
 
+export function renderAnalysisResult(data) {
+    const container = document.getElementById('analysis-result');
+    if (!container) return;
+
+    let wordBreakdownHTML = '';
+    if (data.word_breakdown && data.word_breakdown.length > 0) {
+        wordBreakdownHTML = `
+            <div class="result-details">
+                <h4>Word Breakdown</h4>
+                ${data.word_breakdown.map(word => `
+                    <div class="detail-block">
+                        <p><strong>${word.word}</strong> (<em>${word.pos}, base: ${word.base_form}</em>)</p>
+                        <p class="detail-en">${word.explanation}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    let grammarPointsHTML = '';
+    if (data.grammar_points && data.grammar_points.length > 0) {
+        grammarPointsHTML = `
+            <div class="result-details">
+                <h4>Grammar Points</h4>
+                ${data.grammar_points.map(point => `
+                    <div class="detail-block">
+                        <p><strong>${point.topic}</strong></p>
+                        <p class="detail-en">${point.explanation}</p>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    container.innerHTML = `
+        <div class="card" style="background: var(--background);">
+            <div class="result-details" style="border-top: none; padding-top: 0;">
+                <h4>Overall Meaning</h4>
+                <p>${data.overall_explanation}</p>
+            </div>
+            ${wordBreakdownHTML}
+            ${grammarPointsHTML}
+        </div>
+    `;
+}

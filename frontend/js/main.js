@@ -6,6 +6,8 @@ import { initConversation } from './conversation.js';
 import { initTranslator } from './translator.js';
 import { loadWordbook } from './wordbook.js'; 
 import { state } from './state.js'; // Import state to check login status
+import { initAnalyzer } from './analyzer.js';
+
 
 // Import these modules so their event listeners are set up.
 // These modules handle their own initialization internally.
@@ -43,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 8. Initialize the translator
     initTranslator();
+    
+    // 9. Initialize the analyzer
+    initAnalyzer();
 
     // Explicitly set the default view to 'search'
     showView('search'); 

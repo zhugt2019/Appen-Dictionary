@@ -269,3 +269,26 @@ class TranslateResponse(BaseModel):
     translation: str
     
 # --- ADD END ---
+
+# --- ADD THIS ENTIRE BLOCK START ---
+
+class TextAnalysisRequest(BaseModel):
+    text: str = Field(..., min_length=1, description="Swedish text to be analyzed.")
+    target_language: str = Field(default='zh', description="The language for explanations.")
+
+class WordDetail(BaseModel):
+    word: str
+    pos: str
+    base_form: str
+    explanation: str
+
+class GrammarPoint(BaseModel):
+    topic: str
+    explanation: str
+    
+class TextAnalysisResponse(BaseModel):
+    overall_explanation: str
+    word_breakdown: List[WordDetail]
+    grammar_points: List[GrammarPoint]
+
+# --- ADD THIS ENTIRE BLOCK END ---

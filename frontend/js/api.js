@@ -206,6 +206,13 @@ export class API {
             body: JSON.stringify({ text, style, target_language: targetLanguage })
         });
     }
+
+    async analyzeText(text, targetLanguage) {
+        return this._request('/api/analyze-text', {
+            method: 'POST',
+            body: JSON.stringify({ text, target_language: targetLanguage })
+        });
+    }
 }
 
 export const api = new API();

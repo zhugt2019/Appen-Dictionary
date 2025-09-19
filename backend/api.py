@@ -36,7 +36,8 @@ from .main import (
     start_background_tasks, 
     # audio_processor, 
     model_manager, generate_word_report, 
-    generate_translation
+    generate_translation,
+    generate_text_analysis
 )
 # from .audio_processor import concatenate_audios_sync
 
@@ -378,6 +379,23 @@ async def translate_text(
         logger.error(f"Translation failed for text '{request.text[:30]}...': {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to generate translation.")
 # --- ADD END ---
+
+@chat_router.post("/analyze-text", response_model=models.TextAnalysisResponse, tags=["Conversation Practice"])
+async def analyze_swedish_text(
+    request: models.TextAnalysisRequest,
+    current_user: User = Depends(auth.get_current_active_user)
+):
+    """
+    Analyzes a Swedish sentence or paragraph, breaking down words and grammar.
+    """
+    try:
+        analysis_data = await generate_text_analysis(request)
+        return models.TextAnalysisResponse(**analysis_data)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        logger.error(f"Text analysis failed for text '{request.text[:30]}...': {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate text analysis.")
 
 # --- Include all routers in the main FastAPI app ---
 app.include_router(auth_router)

@@ -42,6 +42,7 @@
                     <a href="#" id="nav-search" class="nav-link active">Search</a>
                     <a href="#" id="nav-wordbook" class="nav-link" style="display: none;">Wordbook</a>
                     <a href="#" id="nav-translator" class="nav-link">Translator</a>
+                    <a href="#" id="nav-analyzer" class="nav-link">Analyzer</a>
                     <a href="#" id="nav-login" class="nav-link">Login</a>
                     <a href="#" id="nav-logout" class="nav-link" style="display: none;">Logout</a>
                 </div>
@@ -51,6 +52,7 @@
                     <a href="#" id="nav-search-desktop" class="nav-link active">Search</a>
                     <a href="#" id="nav-wordbook-desktop" class="nav-link" style="display: none;">Wordbook</a>
                     <a href="#" id="nav-translator-desktop" class="nav-link">Translator</a> 
+                    <a href="#" id="nav-analyzer-desktop" class="nav-link">Analyzer</a>
                     <a href="#" id="nav-login-desktop" class="nav-link">Login</a>
                     <a href="#" id="nav-logout-desktop" class="nav-link" style="display: none;">Logout</a>
                     <div class="language-selector-container">
@@ -145,6 +147,21 @@
                         </div>
                 </div>
                 </div>
+        </div>
+    </section>
+
+    <section id="analyzer-section" class="main-content" style="display: none;">
+        <div class="container">
+            <div class="card">
+                <h2 class="card-header">Sentence & Paragraph Analyzer</h2>
+                <div class="form-group">
+                    <label for="text-to-analyze" class="form-label">Enter a Swedish sentence or paragraph:</label>
+                    <textarea id="text-to-analyze" class="form-textarea" rows="6" placeholder="e.g., Igår gick jag till affären för att köpa mjölk och bröd."></textarea>
+                </div>
+                <button id="analyze-btn" class="btn btn-primary">Analyze Text</button>
+                <div id="analysis-result" class="mt-4">
+                    </div>
+            </div>
         </div>
     </section>
     

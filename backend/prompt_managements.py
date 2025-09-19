@@ -263,6 +263,34 @@ Example format:
 Text to translate: "{Text}"
 """
 
+TEXT_ANALYSIS_PROMPT = """You are an expert Swedish language teacher providing a detailed analysis of a Swedish text for a learner.
+Your entire response MUST be a single, valid JSON object. Do not include any text, explanations, or markdown formatting outside of the JSON structure.
+The user's text is: "{Text}"
+Provide all explanations in {TargetLanguage}.
+
+The JSON object must have the following exact structure:
+{
+  "overall_explanation": "A brief, one-sentence summary of the text's meaning.",
+  "word_breakdown": [
+    {
+      "word": "The original word from the text.",
+      "pos": "The part of speech (e.g., Verb, Noun, Adjective).",
+      "base_form": "The dictionary/base form of the word (e.g., 'springa' for 'sprang').",
+      "explanation": "A concise definition or explanation of the word's meaning in this context."
+    }
+  ],
+  "grammar_points": [
+    {
+      "topic": "The name of a grammatical concept found in the text (e.g., 'V2 Word Order', 'Verb Tense: Preterite', 'Definite Noun Ending').",
+      "explanation": "A simple, clear explanation of how this grammatical rule is applied in the provided text."
+    }
+  ]
+}
+
+- For "word_breakdown", include EVERY significant word (nouns, verbs, adjectives, adverbs). Omit common articles or prepositions unless they are part of a key structure.
+- For "grammar_points", identify 1 to 3 of the most important grammatical concepts demonstrated in the text that would be useful for a learner.
+"""
+
 pm = PromptManager()
 
 
@@ -305,4 +333,9 @@ pm.add_prompt(
 pm.add_prompt(
     name="translation_prompt",
     template=TRANSLATION_PROMPT
+)
+
+pm.add_prompt(
+    name="text_analysis_prompt",
+    template=TEXT_ANALYSIS_PROMPT
 )

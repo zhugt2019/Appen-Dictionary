@@ -35,6 +35,7 @@ from .prompt_managements import pm
 from .models import ChatMessage, MessageRole, format_dialog_for_display
 # from .audio_processor import AudioProcessor, concatenate_audios_sync
 from .models import TranslateRequest, TranslateResponse, TranslationStyle
+from . import models
 
 
 # --- ADDED START: Word Report Cache and Logic ---
@@ -533,3 +534,33 @@ async def generate_translation(request: TranslateRequest) -> str:
     )
     
     return translated_text.strip()
+
+async def generate_text_analysis(request: models.TextAnalysisRequest) -> dict:
+    """
+    Generates a structured analysis of a Swedish text.
+    """
+    language_full_name = LANGUAGE_NAME_MAP.get(request.target_language, "English")
+
+    prompt = pm.get_prompt(
+        name="text_analysis_prompt",
+        variables={
+            "Text": request.text,
+            "TargetLanguage": language_full_name
+        }
+    )
+    
+    # Use a low temperature for predictable, structured JSON output
+    raw_response, _ = await generate_response_async(
+        scenario_prompt=prompt,
+        chat_history=[],
+        generation_config={"temperature": 0.1, "maxOutputTokens": 2048}
+    )
+    
+    try:
+        clean_response = re.sub(r'```json\n(.*?)\n```', r'\1', raw_response, flags=re.DOTALL).strip()
+        analysis_data = json.loads(clean_response)
+        return analysis_data
+    except (json.JSONDecodeError, TypeError) as e:
+        logger.error(f"Failed to parse JSON response from LLM for text analysis: {e}")
+        logger.error(f"LLM Raw Response was: {raw_response}")
+        raise ValueError("The AI returned a response in an invalid format for text analysis.")

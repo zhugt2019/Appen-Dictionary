@@ -263,14 +263,24 @@ Example format:
 Text to translate: "{Text}"
 """
 
-TEXT_ANALYSIS_PROMPT = """You are an expert Swedish language teacher providing a detailed analysis of a Swedish text for a learner.
+TEXT_ANALYSIS_PROMPT = """You are an expert Swedish language teacher providing a detailed analysis of a Swedish text for a learner. 
+Your first and most important task is to determine if the user's text is grammatically correct.
+
 Your entire response MUST be a single, valid JSON object. Do not include any text, explanations, or markdown formatting outside of the JSON structure.
 The user's text is: "{Text}"
 Provide all explanations in {TargetLanguage}.
 
+## A key addition is the error correction functionality:
+- If the text is grammatically correct, set "is_correct" to true. The "correction_explanation" and "corrected_text" fields should be null.
+- If the text is incorrect, set "is_correct" to false, provide a concise explanation for the error, and provide the grammatically correct version of the text.
+- IMPORTANT: If the text was incorrect, the rest of your analysis ("word_breakdown", "grammar_points") should be based on the "corrected_text", not the original incorrect text.
+
 The JSON object must have the following exact structure:
 {
-  "overall_explanation": "A brief, one-sentence summary of the text's meaning.",
+  "is_correct": "A boolean (true/false) indicating if the original text is grammatically correct.",
+  "correction_explanation": "If incorrect, a brief explanation of the error. If correct, this should be null.",
+  "corrected_text": "If incorrect, the corrected version of the text. If correct, this should be null.",
+  "overall_explanation": "A brief, one-sentence summary of the text's meaning (based on the corrected text if applicable).",
   "word_breakdown": [
     {
       "word": "The original word from the text.",
@@ -287,9 +297,62 @@ The JSON object must have the following exact structure:
   ]
 }
 
-- For "word_breakdown", include EVERY significant word (nouns, verbs, adjectives, adverbs). Omit common articles or prepositions unless they are part of a key structure.
-- For "grammar_points", identify 1 to 3 of the most important grammatical concepts demonstrated in the text that would be useful for a learner.
+## Rules for specific sections:
+- For "word_breakdown", analyze every significant word from the corrected text.
+- For "grammar_points", identify 1 to 3 important grammatical concepts. **One of these MUST be a 'Sentence Structure' analysis, where you explicitly identify the Subject (S), Verb (V), Object (O), and Adverbial (A) components of the sentence.**
+
+### Example for an INCORRECT sentence: "Jag en bok läser."
+{
+  "is_correct": false,
+  "correction_explanation": "In a standard Swedish main clause, the verb must always be in the second position. This is known as the V2 rule.",
+  "corrected_text": "Jag läser en bok.",
+  "overall_explanation": "The sentence states that I am reading a book.",
+  "word_breakdown": [
+    { "word": "Jag", "pos": "Pronoun", "base_form": "jag", "explanation": "Refers to the speaker, 'I'." },
+    { "word": "läser", "pos": "Verb", "base_form": "läsa", "explanation": "Present tense of 'to read'." },
+    { "word": "en", "pos": "Article", "base_form": "en", "explanation": "Indefinite article for common gender nouns, 'a' or 'an'." },
+    { "word": "bok", "pos": "Noun", "base_form": "en bok", "explanation": "A book." }
+  ],
+  "grammar_points": [
+    {
+      "topic": "Sentence Structure (S-V-O)",
+      "explanation": "This is a simple main clause. Subject (S): 'Jag', Verb (V): 'läser', Object (O): 'en bok'."
+    },
+    {
+      "topic": "Verb Tense: Present",
+      "explanation": "The verb 'läser' is in the present tense, used to describe actions happening now or general truths."
+    }
+  ]
+}
 """
+
+# TEXT_ANALYSIS_PROMPT = """You are an expert Swedish language teacher providing a detailed analysis of a Swedish text for a learner.
+# Your entire response MUST be a single, valid JSON object. Do not include any text, explanations, or markdown formatting outside of the JSON structure.
+# The user's text is: "{Text}"
+# Provide all explanations in {TargetLanguage}.
+
+# The JSON object must have the following exact structure:
+# {
+#   "overall_explanation": "A brief, one-sentence summary of the text's meaning.",
+#   "word_breakdown": [
+#     {
+#       "word": "The original word from the text.",
+#       "pos": "The part of speech (e.g., Verb, Noun, Adjective).",
+#       "base_form": "The dictionary/base form of the word (e.g., 'springa' for 'sprang').",
+#       "explanation": "A concise definition or explanation of the word's meaning in this context."
+#     }
+#   ],
+#   "grammar_points": [
+#     {
+#       "topic": "The name of a grammatical concept found in the text (e.g., 'V2 Word Order', 'Verb Tense: Preterite', 'Definite Noun Ending').",
+#       "explanation": "A simple, clear explanation of how this grammatical rule is applied in the provided text."
+#     }
+#   ]
+# }
+
+# - For "word_breakdown", include EVERY significant word (nouns, verbs, adjectives, adverbs). Omit common articles or prepositions unless they are part of a key structure.
+# - For "grammar_points", identify 1 to 3 of the most important grammatical concepts demonstrated in the text that would be useful for a learner.
+# """
 
 pm = PromptManager()
 

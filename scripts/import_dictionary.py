@@ -60,10 +60,18 @@ def process_sv_en_pass(temp_db: dict, xml_file_path: str):
     
     for word_elem in root.findall('.//word[@lang="sv"]'):
         raw_swedish_word = word_elem.get('value')
-        trans_elem = word_elem.find('translation')
-        
-        if not raw_swedish_word or trans_elem is None or not trans_elem.get('value'):
+
+        # 1. 使用 findall() 获取所有 translation 元素
+        all_trans_elems = word_elem.findall('translation')
+
+        # 2. 从所有元素中提取释义，并过滤掉空值
+        all_definitions = [t.get('value') for t in all_trans_elems if t.get('value')]
+
+        if not raw_swedish_word or not all_definitions:
             continue
+
+        # 3. 将所有释义用 ", " 连接成一个字符串
+        combined_definitions = ", ".join(all_definitions)
 
         # --- FIX: Clean spaces from source data ---
         swedish_word = raw_swedish_word.replace('|', '').replace(' ', '')
@@ -71,11 +79,11 @@ def process_sv_en_pass(temp_db: dict, xml_file_path: str):
 
         word_class_abbr = word_elem.get('class')
         word_class_full = POS_MAP.get(word_class_abbr, word_class_abbr)
-        
+
         if entry_key not in temp_db:
             dict_entry = Dictionary(
                 swedish_word=swedish_word, 
-                english_def=trans_elem.get('value'),
+                english_def=combined_definitions, # <--- 使用合并后的所有释义
                 word_class=word_class_full
             )
             temp_db[entry_key] = dict_entry

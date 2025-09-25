@@ -208,7 +208,7 @@ def _call_mistral_primary(
         # 3. Use the Mistral client's chat.completions method
         # Note: The official client is `chat`, but `chat.completions` is also supported for OpenAI compatibility.
         # We will use the documented `chat` method for clarity.
-        response = client.chat(
+        response = client.chat.completions.create(
             model=model_name,
             messages=messages,
             temperature=generation_config.get("temperature", 0.8) if generation_config else 0.8,
@@ -291,7 +291,7 @@ def _call_gemini_fallback(
     total_start_time = time.time()
 
     api_key = os.getenv("GEMINI_API_KEY")
-    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash-lite")
 
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set for fallback.")
@@ -345,22 +345,22 @@ def generate_response(
 ) -> Tuple[str, Dict[str, float]]:
     """
     Intelligent dispatcher for generating AI responses.
-    It first tries the primary API (DeepSeek) and falls back to the secondary API (Gemini) on failure.
+    It first tries the primary API (Gemini) and falls back to the secondary API (Mistral) on failure.
     """
 
     try:
-        # Step 1: Attempt the primary API (Mistral)
-        return _call_mistral_primary(scenario_prompt, chat_history, generation_config)
-        # return _call_deepseek_primary(scenario_prompt, chat_history, generation_config)
+        # --- 步骤 1: 优先尝试 Gemini API ---
+        return _call_gemini_fallback(scenario_prompt, chat_history, generation_config)
     except Exception as e:
-        logger.warning(f"Primary API (Mistral) failed: {e}. Falling back to Gemini.")
+        # --- 如果 Gemini 失败，记录警告并回退到 Mistral ---
+        logger.warning(f"Primary API (Gemini) failed: {e}. Falling back to Mistral.")
 
         try:
-            # Step 2: Attempt the fallback API (Gemini)
-            return _call_gemini_fallback(scenario_prompt, chat_history, generation_config)
+            # --- 步骤 2: 尝试备用的 Mistral API ---
+            return _call_mistral_primary(scenario_prompt, chat_history, generation_config)
         except Exception as fallback_e:
-            logger.critical(f"Fallback API (Gemini) also failed: {fallback_e}. No API available to generate response.")
-            # Raise the final exception when both APIs fail
+            # --- 如果两个API都失败了，记录严重错误并抛出异常 ---
+            logger.critical(f"Fallback API (Mistral) also failed: {fallback_e}. No API available to generate response.")
             raise RuntimeError(f"Both primary and fallback APIs failed. Last error: {fallback_e}")
 
 

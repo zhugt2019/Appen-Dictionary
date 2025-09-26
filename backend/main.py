@@ -297,7 +297,14 @@ def _call_gemini_fallback(
         raise ValueError("GEMINI_API_KEY environment variable not set for fallback.")
 
     headers = {"Content-Type": "application/json"}
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    # --- 修正1：URL中不再包含API Key ---
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+
+    # --- 修正2：根据官方文档，将API Key放入请求头 ---
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key
+    }
 
     contents = []
     if scenario_prompt:
@@ -319,6 +326,7 @@ def _call_gemini_fallback(
 
     try:
         api_call_start_time = time.time()
+        # --- 修正3：在请求中使用包含API Key的headers ---
         response = requests.post(api_url, headers=headers, json=payload, timeout=60)
         timing_log["api_call_time"] = time.time() - api_call_start_time
         response.raise_for_status()

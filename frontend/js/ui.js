@@ -351,7 +351,9 @@ async function handleWordReportRequest(event) {
                     <p><strong>${labels.ipa}:</strong> <span class="ipa-text">${report.ipa}</span></p>
                 ` : ''}
                 
-                <p><strong>${labels.inflections}:</strong> ${report.inflections}</p>
+                ${report.inflections && report.inflections.trim() !== '' ? `
+                    <p><strong>${labels.inflections}:</strong> ${report.inflections}</p>
+                ` : ''}
 
                 ${report.comparison ? `
                     <p><strong>${labels.comparison || 'Comparison'}:</strong> ${report.comparison}</p>

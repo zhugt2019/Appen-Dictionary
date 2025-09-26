@@ -222,7 +222,7 @@ The entire analysis MUST be generated in {TargetLanguage}.
 IMPORTANT: If the word's part_of_speech is "Adjective", you MUST add a key named "comparison" to your JSON response, containing the comparative and superlative forms.
 
 Please provide your response ONLY as a single, valid JSON object with the following exact keys and data types:
-- "definition": (string) A clear and concise definition of the word.
+- "definition": (string) A clear and concise definition of the word, written in {TargetLanguage}.
 - "part_of_speech": (string) The part of speech.
 - "ipa": (string) The International Phonetic Alphabet (IPA) transcription for the word. If unavailable, provide an empty string.
 - "inflections": (string) Grammatical inflections. If it's a noun, provide singular indefinite, singular definite, plural indefinite, plural definite forms. If it's a verb, provide present, past (preterite), and supine forms.

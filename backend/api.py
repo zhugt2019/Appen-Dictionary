@@ -132,8 +132,14 @@ def register_user(user: models.UserCreate, db: Session = Depends(database.get_us
     db_user = auth.get_user(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
+    # --- 在这里添加密码截断逻辑 ---
+    # 将密码编码为UTF-8字节，然后截取前72个字节
+    password_bytes = user.password.encode('utf-8')[:72]
+    # 将截断后的字节解码回字符串
+    truncated_password = password_bytes.decode('utf-8', 'ignore')
     new_user = User(username=user.username)
-    new_user.set_password(user.password)
+    # 使用截断后的密码来设置哈希值
+    new_user.set_password(truncated_password) 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

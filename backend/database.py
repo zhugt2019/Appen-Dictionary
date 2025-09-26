@@ -36,7 +36,11 @@ class User(UserDataBase):
         self.password_hash = pwd_context.hash(password)
 
     def verify_password(self, password):
-        return pwd_context.verify(password, self.password_hash)
+        # --- 在这里添加密码截断逻辑 ---
+        password_bytes = password.encode('utf-8')[:72]
+        truncated_password = password_bytes.decode('utf-8', 'ignore')
+        # 使用截断后的密码进行验证
+        return pwd_context.verify(truncated_password, self.password_hash)
 
 class WordbookEntry(UserDataBase):
     """Represents an entry in a user's personal wordbook."""

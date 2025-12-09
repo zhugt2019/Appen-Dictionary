@@ -226,6 +226,16 @@ const reportLabels = {
         synonyms: '近义词',
         antonyms: '反义词'
     },
+    'en': {
+        definition: 'Definition',
+        partOfSpeech: 'Part of Speech',
+        ipa: 'IPA',
+        inflections: 'Inflections',
+        comparison: 'Comparison',
+        exampleSentences: 'Example Sentences',
+        synonyms: 'Synonyms',
+        antonyms: 'Antonyms'
+    },
     'ko': {
         definition: '정의',
         partOfSpeech: '품사',

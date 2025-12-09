@@ -65,6 +65,7 @@ model_manager = ModelManager()
 
 LANGUAGE_NAME_MAP = {
     "zh": "Chinese (中文)",
+    "en": "English",
     "ko": "Korean (한국어)",
     "ur": "Urdu (اردو)",
     "hi": "Hindi (हिन्दी)",

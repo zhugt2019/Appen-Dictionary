@@ -1,0 +1,51 @@
+卷 Data 的文件夹 PATH 列表
+卷序列号为 D296-C568
+D:.
+|   .gitattributes
+|   dictionary.sqlite3
+|   folder_structure.txt
+|   LICENSE
+|   requirements.txt
+|   user_data.sqlite3
+|   
++---backend
+|       api.py
+|       audio_processor.py
+|       auth.py
+|       database.py
+|       main.py
+|       models.py
+|       prompt_managements.py
+|       __init__.py
+|       
++---frontend
+|   |   index.html
+|   |   manifest.json
+|   |   offline.html
+|   |   sw.js
+|   |   
+|   +---css
+|   |       main.css
+|   |       responsive.css
+|   |       
+|   \---js
+|           api.js
+|           auth.js
+|           conversation-practice.js
+|           conversation.js
+|           main.js
+|           recorder.js
+|           search.js
+|           state.js
+|			translator.js
+|           ui.js
+|           utils.js
+|           wordbook.js
+|           
+\---scripts
+    |   import_dictionary.py
+    |   
+    \---dict
+            folkets_en_sv_public.xml
+            folkets_sv_en_public.xml
+            

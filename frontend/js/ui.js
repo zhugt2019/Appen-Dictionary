@@ -236,6 +236,16 @@ const reportLabels = {
         synonyms: 'Synonyms',
         antonyms: 'Antonyms'
     },
+    'es': {
+        definition: 'Definición',
+        partOfSpeech: 'Categoría gramatical',
+        ipa: 'Alfabeto Fonético Internacional (IPA)',
+        inflections: 'Flexión/Conjugación',
+        comparison: 'Comparación',
+        exampleSentences: 'Oraciones de ejemplo',
+        synonyms: 'Sinónimos',
+        antonyms: 'Antónimos'
+    },
     'ko': {
         definition: '정의',
         partOfSpeech: '품사',

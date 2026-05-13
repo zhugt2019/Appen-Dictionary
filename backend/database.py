@@ -1,6 +1,7 @@
 # backend/database.py
 
 import os
+import shutil
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime
@@ -11,9 +12,20 @@ from passlib.context import CryptContext
 # On Vercel: uses Neon PostgreSQL via DATABASE_URL env var
 # Local: falls back to SQLite
 USER_DATA_DB_URL = os.getenv("DATABASE_URL", "sqlite:///./user_data.sqlite3")
-# Dictionary is read-only, shipped with code. On Vercel's read-only filesystem,
-# we must use mode=ro to prevent SQLite from trying to create journal/WAL files.
-DICTIONARY_DB_URL = "sqlite:///file:./dictionary.sqlite3?mode=ro"
+
+# Dictionary is shipped with code (15MB). On Vercel's read-only filesystem,
+# copy to /tmp so SQLite can open it (needs write access for journal/WAL).
+_SOURCE_DICT = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dictionary.sqlite3")
+)
+if os.path.exists(_SOURCE_DICT) and not os.access(os.path.dirname(_SOURCE_DICT), os.W_OK):
+    # Read-only filesystem detected (Vercel): copy to /tmp
+    _TMP_DICT = "/tmp/dictionary.sqlite3"
+    if not os.path.exists(_TMP_DICT):
+        shutil.copy2(_SOURCE_DICT, _TMP_DICT)
+    DICTIONARY_DB_URL = f"sqlite:///{_TMP_DICT}"
+else:
+    DICTIONARY_DB_URL = f"sqlite:///{_SOURCE_DICT}"
 
 # --- MODIFIED: Create two separate declarative bases ---
 UserDataBase = declarative_base()
@@ -110,9 +122,6 @@ class Example(DictionaryBase):
 def _create_engine(db_url: str, **extra_kwargs):
     if db_url.startswith("postgresql"):
         return create_engine(db_url, pool_size=5, max_overflow=10, **extra_kwargs)
-    elif "mode=ro" in db_url:
-        # Read-only SQLite for Vercel's read-only filesystem
-        return create_engine(db_url, connect_args={"check_same_thread": False, "uri": True}, **extra_kwargs)
     else:
         return create_engine(db_url, connect_args={"check_same_thread": False}, **extra_kwargs)
 

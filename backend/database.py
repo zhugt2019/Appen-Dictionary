@@ -11,8 +11,9 @@ from passlib.context import CryptContext
 # On Vercel: uses Neon PostgreSQL via DATABASE_URL env var
 # Local: falls back to SQLite
 USER_DATA_DB_URL = os.getenv("DATABASE_URL", "sqlite:///./user_data.sqlite3")
-# Database for static dictionary data (always SQLite, shipped with code)
-DICTIONARY_DB_URL = "sqlite:///./dictionary.sqlite3"
+# Dictionary is read-only, shipped with code. On Vercel's read-only filesystem,
+# we must use mode=ro to prevent SQLite from trying to create journal/WAL files.
+DICTIONARY_DB_URL = "sqlite:///file:./dictionary.sqlite3?mode=ro"
 
 # --- MODIFIED: Create two separate declarative bases ---
 UserDataBase = declarative_base()
@@ -108,8 +109,10 @@ class Example(DictionaryBase):
 # Build engine kwargs based on database type
 def _create_engine(db_url: str, **extra_kwargs):
     if db_url.startswith("postgresql"):
-        # Neon PostgreSQL requires SSL
         return create_engine(db_url, pool_size=5, max_overflow=10, **extra_kwargs)
+    elif "mode=ro" in db_url:
+        # Read-only SQLite for Vercel's read-only filesystem
+        return create_engine(db_url, connect_args={"check_same_thread": False, "uri": True}, **extra_kwargs)
     else:
         return create_engine(db_url, connect_args={"check_same_thread": False}, **extra_kwargs)
 
@@ -120,15 +123,13 @@ UserSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=user_eng
 DictionarySessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=dictionary_engine)
 
 def init_db():
-    """Initializes both databases by creating all tables."""
+    """Initializes user data tables (dictionary is pre-built and read-only)."""
     try:
         print("Creating user data tables...")
         UserDataBase.metadata.create_all(bind=user_engine)
-        print("Creating dictionary tables...")
-        DictionaryBase.metadata.create_all(bind=dictionary_engine)
-        print("Database tables created successfully.")
+        print("User data tables ready.")
     except Exception as e:
-        print(f"Error creating database tables: {e}")
+        print(f"Error creating user data tables: {e}")
 
 # --- MODIFIED: Dependency functions to get specific database sessions ---
 def get_user_db():

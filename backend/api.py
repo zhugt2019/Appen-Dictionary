@@ -48,7 +48,12 @@ logger = logging.getLogger(__name__)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 AUDIO_CACHE_DIR = Path("audio_cache")
-AUDIO_CACHE_DIR.mkdir(exist_ok=True)
+try:
+    AUDIO_CACHE_DIR.mkdir(exist_ok=True)
+except OSError:
+    # On read-only filesystems (Vercel), fall back to /tmp
+    AUDIO_CACHE_DIR = Path("/tmp/audio_cache")
+    AUDIO_CACHE_DIR.mkdir(exist_ok=True)
 BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
 
 origins = [
@@ -58,7 +63,10 @@ origins = [
 ]
 
 
-database.init_db()
+try:
+    database.init_db()
+except Exception as e:
+    logging.error(f"Failed to initialize database: {e}")
 
 app = FastAPI(
     title="Svenska AI Practice Backend",

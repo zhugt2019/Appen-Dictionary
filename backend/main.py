@@ -27,7 +27,12 @@ import requests
 # import numpy as np
 # from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline, VitsModel, AutoTokenizer
 # from openai import OpenAI
-from mistralai import Mistral
+try:
+    from mistralai import Mistral
+except ImportError:
+    Mistral = None
+    logger = logging.getLogger(__name__)
+    logger.warning("mistralai package not available, Mistral fallback disabled.")
 from cachetools import TTLCache # 确保导入 TTLCache
 
 # Relative imports from within the project
@@ -183,6 +188,9 @@ def _call_mistral_primary(
     """
     Calls the Mistral AI API (primary LLM).
     """
+    if Mistral is None:
+        raise RuntimeError("Mistral client not available (package not installed).")
+
     logger.info("Attempting to generate response with primary API (Mistral)...")
     timing_log = {}
     total_start_time = time.time()

@@ -8,11 +8,10 @@ from passlib.context import CryptContext
 
 # --- MODIFIED: Configuration for two separate databases ---
 # Database for dynamic user data (users, wordbooks)
-# ↓↓↓ 将下面这行:
-# USER_DATA_DB_URL = "sqlite:///./user_data.sqlite3"
-# ↓↓↓ 修改为:
+# On Vercel: uses Neon PostgreSQL via DATABASE_URL env var
+# Local: falls back to SQLite
 USER_DATA_DB_URL = os.getenv("DATABASE_URL", "sqlite:///./user_data.sqlite3")
-# Database for static dictionary data
+# Database for static dictionary data (always SQLite, shipped with code)
 DICTIONARY_DB_URL = "sqlite:///./dictionary.sqlite3"
 
 # --- MODIFIED: Create two separate declarative bases ---
@@ -106,8 +105,16 @@ class Example(DictionaryBase):
     word_entry = relationship("Dictionary", back_populates="examples")
 
 # --- MODIFIED: Database Engines and Sessions for both databases ---
-user_engine = create_engine(USER_DATA_DB_URL)
-dictionary_engine = create_engine(DICTIONARY_DB_URL, connect_args={"check_same_thread": False})
+# Build engine kwargs based on database type
+def _create_engine(db_url: str, **extra_kwargs):
+    if db_url.startswith("postgresql"):
+        # Neon PostgreSQL requires SSL
+        return create_engine(db_url, pool_size=5, max_overflow=10, **extra_kwargs)
+    else:
+        return create_engine(db_url, connect_args={"check_same_thread": False}, **extra_kwargs)
+
+user_engine = _create_engine(USER_DATA_DB_URL)
+dictionary_engine = _create_engine(DICTIONARY_DB_URL)
 
 UserSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=user_engine)
 DictionarySessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=dictionary_engine)

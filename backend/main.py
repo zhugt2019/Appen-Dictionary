@@ -321,12 +321,15 @@ def _call_gemini_fallback(
     contents = []
     if scenario_prompt:
         contents.append({"role": "user", "parts": [{"text": scenario_prompt}]})
-        contents.append({"role": "model", "parts": [{"text": "Ok, jag förstår. Låt oss börja."}]}) # OK, I understand. Let's begin.
     
     for msg in chat_history:
         if isinstance(msg, ChatMessage) and msg.content and msg.content.strip():
             role = "model" if msg.role == MessageRole.AI else "user"
             contents.append({"role": role, "parts": [{"text": msg.content}]})
+
+    # Gemini API does not accept a conversation ending with a model turn.
+    while contents and contents[-1]["role"] == "model":
+        contents.pop()
 
     final_generation_config = {
         "temperature": 0.8, "topP": 0.95, "maxOutputTokens": 2048,

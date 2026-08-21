@@ -121,7 +121,14 @@ class Example(DictionaryBase):
 # Build engine kwargs based on database type
 def _create_engine(db_url: str, **extra_kwargs):
     if db_url.startswith("postgresql"):
-        return create_engine(db_url, pool_size=5, max_overflow=10, **extra_kwargs)
+        return create_engine(
+            db_url,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=300,
+            **extra_kwargs
+        )
     else:
         return create_engine(db_url, connect_args={"check_same_thread": False}, **extra_kwargs)
 

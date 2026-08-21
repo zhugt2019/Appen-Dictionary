@@ -306,6 +306,8 @@ def _call_gemini_fallback(
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set for fallback.")
 
+    logger.info(f"Gemini key suffix used: ...{api_key[-6:]}, model: {model_name}")
+
     headers = {"Content-Type": "application/json"}
     # --- 修正1：URL中不再包含API Key ---
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
@@ -353,7 +355,10 @@ def _call_gemini_fallback(
         logger.info(f"Generated AI response successfully with Gemini (fallback) in {timing_log['total_response_time']:.2f}s.")
         return model_response, timing_log
     except Exception as e:
-        logger.error(f"Gemini fallback API request failed: {e}", exc_info=True)
+        try:
+            logger.error(f"Gemini fallback API request failed: {e} | Response body: {response.text[:1000]}")
+        except Exception:
+            logger.error(f"Gemini fallback API request failed: {e}", exc_info=True)
         raise
 
 def generate_response(

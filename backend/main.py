@@ -301,7 +301,7 @@ def _call_gemini_fallback(
     total_start_time = time.time()
 
     api_key = os.getenv("GEMINI_API_KEY")
-    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
+    model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.5-flash-lite")
 
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set for fallback.")
